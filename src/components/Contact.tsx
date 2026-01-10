@@ -161,10 +161,10 @@ const handleSubmit = async (e: React.FormEvent) => {
             <p className="text-muted-foreground mb-4">
               Or reach out directly at{" "}
               <a 
-                href="mailto:joel@example.com" 
+                href="mailto:joelonyedikaepic@gmail.com" 
                 className="text-primary hover:underline"
               >
-                joel@example.com
+                joelonyedikaepic@gmail.com
               </a>
             </p>
 
