@@ -6,10 +6,12 @@ import Testimonials from "@/components/Testimonials";
 import Projects from "@/components/Projects";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
+import CustomCursor from "@/components/CustomCursor";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <CustomCursor />
       <Navbar />
       <main>
         <Hero />
