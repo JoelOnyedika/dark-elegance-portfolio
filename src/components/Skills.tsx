@@ -22,7 +22,8 @@ import {
   SiExpress,
   SiJest,
   SiFlask,
-  SiDjango
+  SiDjango,
+  SiFastapi
 } from "react-icons/si";
 
 const skillsRow1 = [
@@ -37,6 +38,7 @@ const skillsRow1 = [
   { name: "MongoDB", icon: SiMongodb, color: "#47A248" },
   { name: "GraphQL", icon: SiGraphql, color: "#E10098" },
   { name: "Tailwind CSS", icon: SiTailwindcss, color: "#06B6D4" },
+  { name: "FastAPI", icon: SiFastapi, color: "#000000" },
 ];
 
 const skillsRow2 = [

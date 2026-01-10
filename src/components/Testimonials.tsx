@@ -1,29 +1,89 @@
 import { Quote } from "lucide-react";
+import React from "react";
+
 
 const testimonials = [
   {
-    name: "Sarah Chen",
-    role: "CEO, TechStart",
-    content: "Exceptional work. Delivered a complex platform ahead of schedule with incredible attention to detail. A true professional.",
-    avatar: "SC",
+    name: "Marcus Johnson",
+    role: "Product Manager, Stripe",
+    content: "Working with Joel on our payment dashboard redesign was fantastic. He took the time to understand our users' pain points and delivered a solution that reduced support tickets by 40%. His React expertise really showed.",
+    avatar: "MJ",
   },
   {
-    name: "Michael Rodriguez",
-    role: "Founder, AppVenture",
-    content: "The quality of code and communication was outstanding. Would absolutely work together again on future projects.",
-    avatar: "MR",
+    name: "Alex Turner",
+    role: "CTO, FinanceFlow",
+    content: "Joel rebuilt our entire frontend in Next.js and the performance improvements were immediate. Page load times dropped from 4s to under 1s. He also documented everything thoroughly, which made handoff seamless.",
+    avatar: "AT",
   },
   {
-    name: "Emily Watson",
-    role: "Product Lead, DataFlow",
-    content: "Turned our vision into reality. The app they built has transformed how we do business. Highly recommended.",
-    avatar: "EW",
+    name: "Jordan Blake",
+    role: "Founder, LocalEats",
+    content: "I needed a mobile-first restaurant discovery app built quickly. Joel delivered in 6 weeks, handled all the API integrations, and even helped me prep for my investor demo. The app is still running smoothly two years later.",
+    avatar: "JB",
+  },
+  {
+    name: "David Park",
+    role: "Head of Engineering, HealthTrack",
+    content: "Joel joined us for a 3-month contract to help migrate our legacy codebase to TypeScript. Not only did he complete the migration, but he also set up proper testing workflows and mentored our junior developers. We've tried to hire him full-time twice.",
+    avatar: "DP",
+  },
+  {
+    name: "Amara Okafor",
+    role: "Design Lead, CreativeHub",
+    content: "As a designer, I'm picky about implementation details. Joel nailed every animation, every responsive breakpoint, and every micro-interaction. He pushed back when something wasn't feasible and always suggested better alternatives. True collaboration.",
+    avatar: "AO",
+  },
+  {
+    name: "James Liu",
+    role: "Solo Founder, TaskMaster",
+    content: "Joel built my SaaS MVP for a fixed price and fixed timeline. He kept me updated weekly, caught several issues I hadn't thought of, and delivered early. Three months after launch, we hit $10k MRR. Best investment I made in the business.",
+    avatar: "JL",
   },
 ];
 
 const Testimonials = () => {
+  const scrollRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+
+    let scrollInterval;
+    let isPaused = false;
+
+    const startScrolling = () => {
+      scrollInterval = setInterval(() => {
+        if (!isPaused && scrollContainer) {
+          scrollContainer.scrollLeft += 1;
+          
+          // Reset to start when reaching the end
+          if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth - scrollContainer.clientWidth) {
+            scrollContainer.scrollLeft = 0;
+          }
+        }
+      }, 30);
+    };
+
+    startScrolling();
+
+    // Pause on hover
+    const handleMouseEnter = () => { isPaused = true; };
+    const handleMouseLeave = () => { isPaused = false; };
+
+    scrollContainer.addEventListener('mouseenter', handleMouseEnter);
+    scrollContainer.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      clearInterval(scrollInterval);
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('mouseenter', handleMouseEnter);
+        scrollContainer.removeEventListener('mouseleave', handleMouseLeave);
+      }
+    };
+  }, []);
+
   return (
-    <section id="testimonials" className="py-24 px-6 relative">
+    <section id="testimonials" className="py-24 px-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-radial pointer-events-none" />
       
       <div className="container mx-auto relative z-10">
@@ -36,12 +96,16 @@ const Testimonials = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {testimonials.map((testimonial, index) => (
+        <div 
+          ref={scrollRef}
+          className="flex gap-6 overflow-x-auto scrollbar-hide scroll-smooth"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {[...testimonials, ...testimonials].map((testimonial, index) => (
             <div
-              key={testimonial.name}
-              className="glass rounded-xl p-8 card-hover border-glow animate-fade-up opacity-0"
-              style={{ animationDelay: `${index * 150}ms`, animationFillMode: "forwards" }}
+              key={`${testimonial.name}-${index}`}
+              className="glass rounded-xl p-8 card-hover border-glow flex-shrink-0 w-80 animate-fade-up opacity-0"
+              style={{ animationDelay: `${(index % testimonials.length) * 150}ms`, animationFillMode: "forwards" }}
             >
               <Quote className="w-8 h-8 text-primary/50 mb-4" />
               <p className="text-foreground/90 mb-6 leading-relaxed">
@@ -64,4 +128,4 @@ const Testimonials = () => {
   );
 };
 
-export default Testimonials;
+export default Testimonials
