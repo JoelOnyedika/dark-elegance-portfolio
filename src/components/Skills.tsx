@@ -20,7 +20,9 @@ import {
   SiSupabase,
   SiPrisma,
   SiExpress,
-  SiJest
+  SiJest,
+  SiFlask,
+  SiDjango
 } from "react-icons/si";
 
 const skillsRow1 = [
@@ -43,12 +45,13 @@ const skillsRow2 = [
   { name: "Redis", icon: SiRedis, color: "#DC382D" },
   { name: "Linux", icon: SiLinux, color: "#FCC624" },
   { name: "Figma", icon: SiFigma, color: "#F24E1E" },
-  { name: "Vue.js", icon: SiVuedotjs, color: "#4FC08D" },
+  { name: "Django", icon: SiDjango, color: "#4FC08D" },
   { name: "Firebase", icon: SiFirebase, color: "#FFCA28" },
   { name: "Supabase", icon: SiSupabase, color: "#3FCF8E" },
   { name: "Prisma", icon: SiPrisma, color: "#2D3748" },
   { name: "Express.js", icon: SiExpress, color: "#ffffff" },
   { name: "Jest", icon: SiJest, color: "#C21325" },
+  { name: "Flask", icon: SiFlask, color: "#000000" },
 ];
 
 const MarqueeRow = ({ skills, reverse = false }: { skills: typeof skillsRow1; reverse?: boolean }) => {
