@@ -4,21 +4,25 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className="min-h-screen flex flex-col items-center justify-center relative bg-gradient-hero px-6 pt-20"
+      className="min-h-screen flex flex-col items-center justify-center relative px-6 pt-20 overflow-hidden"
     >
-      {/* Floating gradient orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-soft pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse-soft pointer-events-none" style={{ animationDelay: "2s" }} />
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-hero" />
+      
+      {/* Floating animated orbs */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[100px] animate-gradient-shift pointer-events-none" />
+      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-secondary/15 rounded-full blur-[100px] animate-gradient-shift-reverse pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial opacity-50 animate-pulse-soft pointer-events-none" />
 
       <div className="container mx-auto text-center relative z-10">
         <p className="text-primary font-medium mb-4 animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
-          Hello, I'm a
+          Welcome to my portfolio
         </p>
         
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 animate-fade-up opacity-0" style={{ animationDelay: "200ms", animationFillMode: "forwards" }}>
-          <span className="text-gradient glow-text">Full-Stack</span>
+          Hi, I'm <span className="text-gradient glow-text">Joel</span> —
           <br />
-          <span className="text-foreground">& Software Developer</span>
+          <span className="text-foreground">Full-Stack & Software Developer</span>
         </h1>
         
         <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 animate-fade-up opacity-0" style={{ animationDelay: "400ms", animationFillMode: "forwards" }}>
