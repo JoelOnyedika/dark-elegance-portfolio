@@ -22,7 +22,7 @@ const Navbar = () => {
             href="#home" 
             className="text-xl font-semibold text-gradient hover:opacity-80 transition-opacity"
           >
-            Dev.
+            Joel Onyedika 🔥
           </a>
 
           {/* Desktop Navigation */}
