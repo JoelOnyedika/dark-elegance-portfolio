@@ -1,10 +1,10 @@
-import { ArrowDown, Wrench, Zap } from "lucide-react";
+import { ArrowDown, Wrench, Zap, Code2 } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const Hero = () => {
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
-  const fullText = "I'm Joel. I fix broken code & build SaaS.";
+  const fullText = "I fix broken code & build SaaS.";
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
@@ -32,76 +32,76 @@ const Hero = () => {
   return (
     <section 
       id="home" 
-      className="min-h-screen flex flex-col items-center justify-center relative px-6 pt-20 overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden bg-gradient-hero"
     >
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-hero" />
-      
-      {/* Floating animated orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/15 rounded-full blur-[100px] animate-gradient-shift pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-secondary/15 rounded-full blur-[100px] animate-gradient-shift-reverse pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial opacity-50 animate-pulse-soft pointer-events-none" />
-
-      <div className="container mx-auto text-center relative z-10">
+      <div className="container mx-auto container-padding relative z-10 text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
-          <Wrench className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-primary">Code Janitor Available</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 border border-primary/30 rounded-full mb-6 sm:mb-8 animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse-border" />
+          <span className="text-xs sm:text-sm font-medium text-primary">Available for Work</span>
         </div>
         
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 min-h-[1.2em]">
-          <span className="text-gradient glow-text">{displayText}</span>
-          <span className={`text-primary ${showCursor && !isTypingComplete ? 'opacity-100' : 'opacity-0'} transition-opacity`}>|</span>
-        </h1>
+        {/* Main Heading */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-3 sm:mb-4 leading-none">
+            <span className="block text-foreground mb-2">Joel Onyedika</span>
+            <span className="text-gradient glow-text">{displayText}</span>
+            <span className={`text-primary ${showCursor && !isTypingComplete ? 'opacity-100' : 'opacity-0'} transition-opacity`}>|</span>
+          </h1>
+        </div>
         
-        <div className={`max-w-3xl mx-auto mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="text-xl sm:text-2xl text-foreground mb-4 font-medium">
+        <div className={`max-w-2xl mx-auto mb-8 sm:mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-lg sm:text-xl md:text-2xl text-foreground mb-3 sm:mb-4 font-semibold">
             Your codebase is a mess. I clean it up.
           </p>
-          <p className="text-lg text-muted-foreground">
-            Full-stack developer specializing in SaaS applications and legacy code rescue. 
-            I turn spaghetti code into clean architecture, ship fast, and don't leave tech debt behind.
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed px-4 sm:px-0">
+            Full-stack developer who turns spaghetti code into clean architecture. I build SaaS apps and rescue legacy systems—fast.
           </p>
         </div>
 
-        {/* Stats */}
-        <div className={`grid grid-cols-3 gap-6 max-w-2xl mx-auto mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
-          <div className="glass rounded-lg p-4 border-glow">
-            <div className="text-3xl font-bold text-primary mb-1">3+</div>
-            <div className="text-sm text-muted-foreground">Years Experience</div>
+        {/* Stats Grid */}
+        <div className={`grid grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-2xl mx-auto mb-8 sm:mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="glass card-padding rounded-lg border-glow">
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-1">3+</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Years Exp</div>
           </div>
-          <div className="glass rounded-lg p-4 border-glow">
-            <div className="text-3xl font-bold text-primary mb-1">15+</div>
-            <div className="text-sm text-muted-foreground">Projects Shipped</div>
+          <div className="glass card-padding rounded-lg border-glow">
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-1">15+</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Projects</div>
           </div>
-          <div className="glass rounded-lg p-4 border-glow">
-            <div className="text-3xl font-bold text-primary mb-1">100%</div>
-            <div className="text-sm text-muted-foreground">Clean Code</div>
+          <div className="glass card-padding rounded-lg border-glow">
+            <div className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-1">100%</div>
+            <div className="text-xs sm:text-sm text-muted-foreground">Clean</div>
           </div>
         </div>
 
-        <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+        {/* CTAs */}
+        <div className={`flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-10 sm:mb-12 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
           <a 
             href="#projects" 
-            className="group px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover-glow transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+            className="group px-6 py-3 sm:px-8 sm:py-4 bg-primary text-primary-foreground rounded-lg font-medium hover-glow transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
           >
-            <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            See What I've Built
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform" />
+            View Projects
           </a>
           <a 
             href="#contact" 
-            className="px-8 py-4 glass border-glow rounded-lg font-medium transition-all duration-300 hover:scale-105"
+            className="px-6 py-3 sm:px-8 sm:py-4 glass border-glow rounded-lg font-medium transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2 text-sm sm:text-base"
           >
-            Hire Me to Clean Your Code
+            <Wrench className="w-4 h-4 sm:w-5 sm:h-5" />
+            Hire Me
           </a>
         </div>
 
-        {/* Tech Stack Highlight */}
-        <div className={`mt-12 text-sm text-muted-foreground transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
-          <p className="mb-3">Built with</p>
-          <div className="flex flex-wrap justify-center gap-3">
+        {/* Tech Stack */}
+        <div className={`text-xs sm:text-sm text-muted-foreground transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Code2 className="w-4 h-4" />
+            <span className="font-medium">Tech Stack</span>
+          </div>
+          <div className="flex flex-wrap justify-center gap-2">
             {["React", "Next.js", "Node.js", "TypeScript", "Python", "PostgreSQL", "Docker"].map((tech) => (
-              <span key={tech} className="px-3 py-1 bg-muted/30 rounded-full text-xs font-medium">
+              <span key={tech} className="px-2.5 py-1 sm:px-3 sm:py-1.5 bg-muted/50 border border-border rounded-full font-medium">
                 {tech}
               </span>
             ))}
@@ -112,9 +112,9 @@ const Hero = () => {
       {/* Scroll indicator */}
       <a 
         href="#about"
-        className={`absolute bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-foreground transition-all animate-float ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 text-muted-foreground hover:text-foreground transition-all animate-float ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}
       >
-        <ArrowDown className="w-6 h-6" />
+        <ArrowDown className="w-5 h-5 sm:w-6 sm:h-6" />
       </a>
     </section>
   );
