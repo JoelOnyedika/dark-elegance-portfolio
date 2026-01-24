@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Send, Github, Linkedin, Twitter } from "lucide-react";
+import { Send, Github, Linkedin, Twitter, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,13 @@ const Contact = () => {
     { icon: Twitter, href: "https://twitter.com/highoctane0000", label: "Twitter" },
   ];
 
+  const services = [
+    "Need a messy codebase cleaned up?",
+    "Building a SaaS and need a developer?",
+    "Have a critical bug that needs fixing ASAP?",
+    "Looking for someone to take your project from 0 to 1?",
+  ];
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({
       ...prev,
@@ -27,7 +34,7 @@ const Contact = () => {
     }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
@@ -43,7 +50,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           name: formData.name,
           email: formData.email,
           message: formData.message,
-          subject: `New Contact Form Submission from ${formData.name}`,
+          subject: `New Project Inquiry from ${formData.name}`,
         }),
       });
 
@@ -52,7 +59,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       if (result.success) {
         toast({
           title: "Message sent!",
-          description: "Thanks for reaching out. I'll get back to you soon.",
+          description: "I'll get back to you within 24 hours.",
         });
         setFormData({ name: "", email: "", message: "" });
       } else {
@@ -61,7 +68,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     } catch (error) {
       toast({
         title: "Error sending message",
-        description: "Something went wrong. Please try again or email me directly.",
+        description: "Please email me directly at joelonyedikaepic@gmail.com",
         variant: "destructive",
       });
     } finally {
@@ -76,62 +83,98 @@ const handleSubmit = async (e: React.FormEvent) => {
       <div className="container mx-auto relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Let's <span className="text-gradient">Connect</span>
+            Let's Work <span className="text-gradient">Together</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Have a project in mind or just want to chat? I'm always open to discussing 
-            new opportunities and interesting ideas.
+          <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+            Got a project that needs shipping? A codebase that needs saving? 
+            Send me a message and I'll get back to you within 24 hours.
           </p>
         </div>
 
-        <div className="max-w-2xl mx-auto">
-          {/* Contact Form */}
-          <form onSubmit={handleSubmit} className="glass-strong rounded-2xl p-8 mb-8">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 mb-12">
+          {/* Left column - Services */}
+          <div className="space-y-6">
+            <div className="glass-strong rounded-2xl p-8">
+              <h3 className="text-xl font-bold mb-6">I Can Help With:</h3>
+              <ul className="space-y-4">
+                {services.map((service, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-muted-foreground">{service}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="glass rounded-xl p-6">
+              <h3 className="font-semibold mb-3">Quick Response Time</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                I respond to all inquiries within 24 hours. If your project is urgent, mention it in your message.
+              </p>
+              
+              <div className="flex gap-3 pt-4 border-t border-border/50">
+                {socials.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="w-10 h-10 glass rounded-full flex items-center justify-center border-glow hover:bg-primary/10 transition-all duration-300 hover:scale-110"
+                  >
+                    <social.icon className="w-4 h-4 text-muted-foreground hover:text-foreground transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right column - Contact Form */}
+          <form onSubmit={handleSubmit} className="glass-strong rounded-2xl p-8">
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label htmlFor="name" className="text-sm font-medium text-foreground">
-                    Your Name
-                  </label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="John Doe"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="bg-background/50 border-border/50 focus:border-primary transition-colors"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-foreground">
-                    Email Address
-                  </label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="john@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="bg-background/50 border-border/50 focus:border-primary transition-colors"
-                  />
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium text-foreground">
+                  Your Name *
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="John Doe"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="bg-background/50 border-border/50 focus:border-primary transition-colors"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Email Address *
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="john@company.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="bg-background/50 border-border/50 focus:border-primary transition-colors"
+                />
               </div>
               
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium text-foreground">
-                  Your Message
+                  Project Details *
                 </label>
                 <Textarea
                   id="message"
                   name="message"
-                  placeholder="Tell me about your project..."
+                  placeholder="Tell me about your project, timeline, and what you need help with..."
                   value={formData.message}
                   onChange={handleChange}
                   required
-                  rows={5}
+                  rows={6}
                   className="bg-background/50 border-border/50 focus:border-primary transition-colors resize-none"
                 />
               </div>
@@ -139,7 +182,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-6 text-lg font-medium hover-glow transition-all duration-300 hover:scale-[1.02]"
+                className="w-full py-6 text-base font-medium hover-glow transition-all duration-300 hover:scale-[1.02]"
               >
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -153,34 +196,18 @@ const handleSubmit = async (e: React.FormEvent) => {
                   </span>
                 )}
               </Button>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Or email directly:{" "}
+                <a 
+                  href="mailto:joelonyedikaepic@gmail.com" 
+                  className="text-primary hover:underline"
+                >
+                  joelonyedikaepic@gmail.com
+                </a>
+              </p>
             </div>
           </form>
-
-          {/* Alternative contact */}
-          <div className="text-center">
-            <p className="text-muted-foreground mb-4">
-              Or reach out directly at{" "}
-              <a 
-                href="mailto:joelonyedikaepic@gmail.com" 
-                className="text-primary hover:underline"
-              >
-                joelonyedikaepic@gmail.com
-              </a>
-            </p>
-
-            <div className="flex justify-center gap-4">
-              {socials.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  aria-label={social.label}
-                  className="w-12 h-12 glass rounded-full flex items-center justify-center border-glow hover:bg-primary/10 transition-all duration-300 hover:scale-110"
-                >
-                  <social.icon className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
-                </a>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
