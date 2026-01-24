@@ -1,12 +1,10 @@
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Wrench, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const Hero = () => {
   const [displayText, setDisplayText] = useState("");
   const [showCursor, setShowCursor] = useState(true);
-  const fullText = "Hi, I'm Joel Onyedika";
-  const subtitle = "Full-Stack & Software Developer";
-  const [subtitleText, setSubtitleText] = useState("");
+  const fullText = "I'm Joel. I fix broken code & build SaaS.";
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
@@ -17,24 +15,13 @@ const Hero = () => {
         currentIndex++;
       } else {
         clearInterval(typingInterval);
-        // Start typing subtitle after main text
-        let subtitleIndex = 0;
-        const subtitleInterval = setInterval(() => {
-          if (subtitleIndex <= subtitle.length) {
-            setSubtitleText(subtitle.slice(0, subtitleIndex));
-            subtitleIndex++;
-          } else {
-            clearInterval(subtitleInterval);
-            setIsTypingComplete(true);
-          }
-        }, 50);
+        setIsTypingComplete(true);
       }
-    }, 80);
+    }, 60);
 
     return () => clearInterval(typingInterval);
   }, []);
 
-  // Blinking cursor effect
   useEffect(() => {
     const cursorInterval = setInterval(() => {
       setShowCursor(prev => !prev);
@@ -56,38 +43,69 @@ const Hero = () => {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial opacity-50 animate-pulse-soft pointer-events-none" />
 
       <div className="container mx-auto text-center relative z-10">
-        <p className="text-primary font-medium mb-4 animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
-          Welcome to my portfolio
-        </p>
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8 animate-fade-up opacity-0" style={{ animationDelay: "100ms", animationFillMode: "forwards" }}>
+          <Wrench className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-primary">Code Janitor Available</span>
+        </div>
         
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-2 min-h-[1.2em]">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-6 min-h-[1.2em]">
           <span className="text-gradient glow-text">{displayText}</span>
           <span className={`text-primary ${showCursor && !isTypingComplete ? 'opacity-100' : 'opacity-0'} transition-opacity`}>|</span>
         </h1>
         
-        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-6 min-h-[1.2em]">
-          {subtitleText}
-          <span className={`text-primary ${showCursor && displayText.length === fullText.length && !isTypingComplete ? 'opacity-100' : 'opacity-0'} transition-opacity`}>|</span>
-        </h2>
-        
-        <p className={`text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
-          I build real products that solve real problems. From concept to deployment, 
-          I create software that people actually use.
-        </p>
+        <div className={`max-w-3xl mx-auto mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="text-xl sm:text-2xl text-foreground mb-4 font-medium">
+            Your codebase is a mess. I clean it up.
+          </p>
+          <p className="text-lg text-muted-foreground">
+            Full-stack developer specializing in SaaS applications and legacy code rescue. 
+            I turn spaghetti code into clean architecture, ship fast, and don't leave tech debt behind.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className={`grid grid-cols-3 gap-6 max-w-2xl mx-auto mb-10 transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="glass rounded-lg p-4 border-glow">
+            <div className="text-3xl font-bold text-primary mb-1">3+</div>
+            <div className="text-sm text-muted-foreground">Years Experience</div>
+          </div>
+          <div className="glass rounded-lg p-4 border-glow">
+            <div className="text-3xl font-bold text-primary mb-1">15+</div>
+            <div className="text-sm text-muted-foreground">Projects Shipped</div>
+          </div>
+          <div className="glass rounded-lg p-4 border-glow">
+            <div className="text-3xl font-bold text-primary mb-1">100%</div>
+            <div className="text-sm text-muted-foreground">Clean Code</div>
+          </div>
+        </div>
 
         <div className={`flex flex-col sm:flex-row gap-4 justify-center transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
           <a 
             href="#projects" 
-            className="px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover-glow transition-all duration-300 hover:scale-105"
+            className="group px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover-glow transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
           >
-            View My Work
+            <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            See What I've Built
           </a>
           <a 
             href="#contact" 
             className="px-8 py-4 glass border-glow rounded-lg font-medium transition-all duration-300 hover:scale-105"
           >
-            Get in Touch
+            Hire Me to Clean Your Code
           </a>
+        </div>
+
+        {/* Tech Stack Highlight */}
+        <div className={`mt-12 text-sm text-muted-foreground transition-opacity duration-500 ${isTypingComplete ? 'opacity-100' : 'opacity-0'}`}>
+          <p className="mb-3">Built with</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {["React", "Next.js", "Node.js", "TypeScript", "Python", "PostgreSQL", "Docker"].map((tech) => (
+              <span key={tech} className="px-3 py-1 bg-muted/30 rounded-full text-xs font-medium">
+                {tech}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
