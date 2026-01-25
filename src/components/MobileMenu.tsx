@@ -33,7 +33,7 @@ const MobileMenu = ({ isOpen, onClose, links }: MobileMenuProps) => {
       <div className="absolute right-0 top-0 h-full w-72 bg-card border-l border-border animate-slide-in-right">
         <div className="p-6">
           <div className="flex items-center justify-between mb-10">
-            <span className="text-xl font-semibold text-gradient">Dev.</span>
+            <span className="text-xl font-semibold text-gradient">Joel Onyedika</span>
             <button
               onClick={onClose}
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
