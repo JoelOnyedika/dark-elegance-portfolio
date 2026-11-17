@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
   },
   plugins: [react()],
+  build: { chunkSizeWarningLimit: 700, rollupOptions: { output: { manualChunks: { three: ["three"], gsap: ["gsap", "lenis"] } } } },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
