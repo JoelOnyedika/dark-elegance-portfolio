@@ -1,6 +1,6 @@
 # Joel Onyedika — Portfolio
 
-Particle-head 3D scroll portfolio. React + Vite + TypeScript, Three.js (custom point-cloud shaders), GSAP ScrollTrigger and Lenis smooth scroll.
+3D scroll portfolio built as an embedding space. React + Vite + TypeScript, Three.js (custom shaders), GSAP ScrollTrigger and Lenis. See DESIGN.md for the concept.
 
 ## Run locally
 ```bash
@@ -16,11 +16,10 @@ npm run build    # production build in dist/
    `vercel.json` already rewrites all routes to `index.html`.
 
 ## Where things live
-- `src/lib/data.ts` — all copy: services, skills, projects, testimonials, email.
-- `src/components/Scene.tsx` — the 3D particle head. `STAGES` at the top sets camera pose and dust level per section.
-- `src/lib/head.ts` — procedural head/neck/shoulders generator (no model file).
-- `src/components/sections/*` — one file per section.
-- `src/index.css` — all styling and design tokens (`:root`).
+- `src/lib/data.ts`: projects, stack, email and links.
+- `src/components/Scene.tsx`: the 3D scene and camera path.
+- `src/components/sections/*`: one file per section. `src/pages/Case.tsx`: project case pages.
+- `src/index.css`: all styling and tokens (`:root`).
 
 ## Performance
-Particle count adapts to the device (28k mobile, 40k/56k desktop) and drops automatically if frame times run long. `prefers-reduced-motion` disables smooth scroll and heavy animation.
+Point count adapts to the device (4.5k phone, 7k/10k desktop) and drops automatically if frames run long. `prefers-reduced-motion` disables smooth scroll and WebGL.

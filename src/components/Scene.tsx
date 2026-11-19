@@ -1,283 +1,291 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { gsap, reduced, coarse } from "@/lib/motion";
-import { buildHeadCloud, headBase, HEAD_Y } from "@/lib/head";
-import { lerp, smooth } from "@/lib/util";
+import { lerp, smooth, clamp01 } from "@/lib/util";
+import { PROJECTS } from "@/lib/data";
 
-type Stage = { cam: [number, number, number]; look: [number, number, number]; disperse: number; rot: number };
+/**
+ * Concept: an embedding space. Three clusters (web, AI, backend) float in a cloud of points.
+ * Scrolling is a query: the camera flies through the cloud, each chapter "retrieves" its
+ * cluster (points contract and light up, nearest neighbours connect) and the projects are
+ * 3D nodes you arrive at one by one.
+ */
+const CENTERS = [new THREE.Vector3(-6.5, 2, -5), new THREE.Vector3(6.5, -1.5, -9), new THREE.Vector3(-1, -4.5, -14)];
+const NODES = [new THREE.Vector3(4, 0.5, -21), new THREE.Vector3(-4, 1, -27), new THREE.Vector3(3.5, -1, -33)];
+const SHIFT = 3.4;
 
-// One camera/particle "pose" per section. The scene blends between them as you scroll.
-const STAGES: Record<string, Stage> = {
-  home: { cam: [0, 0.05, 5.4], look: [0, -0.15, 0], disperse: 0, rot: 0 },
-  about: { cam: [1.2, 0.2, 2.6], look: [1.05, 0.2, 0], disperse: 0, rot: 0.4 },
-  services: { cam: [-1.5, 0.15, 3.7], look: [-1.35, 0.15, 0], disperse: 0, rot: -0.4 },
-  skills: { cam: [0, 0, 6.4], look: [0, 0, 0], disperse: 0.92, rot: 0.9 },
-  work: { cam: [0, 0, 6.8], look: [0, 0, 0], disperse: 1, rot: 1.4 },
-  voices: { cam: [0, 0, 6.2], look: [0, 0, 0], disperse: 1, rot: 2.0 },
-  contact: { cam: [1.0, 0.2, 4.2], look: [0.95, 0.05, 0], disperse: 0, rot: 0.15 },
-};
-const ORDER = Object.keys(STAGES);
+type KF = { cam: THREE.Vector3; look: THREE.Vector3; w: number; off: number };
+const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
 const VERT = /* glsl */ `
-  uniform float uTime, uDisperse, uSize, uPR, uPulse;
-  uniform vec3 uRayO, uRayD, uPulseO, uPulseD;
-  uniform float uMouse;
-  attribute vec3 aNormal;
+  uniform float uTime, uSize, uPR, uPull, uMouse, uIntro;
+  uniform vec3 uW, uC0, uC1, uC2, uRayO, uRayD;
+  attribute float aCl;
   attribute vec4 aRand;
-  attribute float aAO;
-  varying vec3 vColor;
+  varying float vW;
   varying float vAlpha;
+
+  float wOf(float c) { return c < 0.5 ? uW.x : (c < 1.5 ? uW.y : uW.z); }
+  vec3 cOf(float c) { return c < 0.5 ? uC0 : (c < 1.5 ? uC1 : uC2); }
 
   void main() {
     vec3 p = position;
-    p.y += sin(uTime * 0.9 + aRand.x * 6.283) * 0.006;
-    p += aNormal * sin(uTime * 1.3 + aRand.y * 6.283) * 0.004;
+    float w = 0.0;
+    if (aCl > -0.5) {
+      w = wOf(aCl);
+      vec3 cc = cOf(aCl);
+      p = mix(p, cc + (p - cc) * 0.6, w * uPull);
+    }
+    p += vec3(sin(uTime * 0.4 + aRand.x * 6.28), cos(uTime * 0.37 + aRand.y * 6.28), sin(uTime * 0.31 + aRand.z * 6.28)) * 0.06;
+    // intro: points arrive from a wide scatter
+    p = mix(p * 2.2 + (aRand.xyz - 0.5) * 6.0, p, uIntro);
+    vec3 wp = (modelMatrix * vec4(p, 1.0)).xyz;
 
-    // dust form: a slowly drifting cloud, staggered per particle so the head "melts" rather than pops
-    vec3 dust = (aRand.xyz - 0.5) * vec3(10.0, 6.5, 6.0);
-    dust += vec3(
-      sin(uTime * 0.21 + aRand.w * 24.0),
-      cos(uTime * 0.26 + aRand.x * 19.0),
-      sin(uTime * 0.18 + aRand.y * 15.0)) * 0.45;
-    float d = smoothstep(0.0, 1.0, clamp(uDisperse * 1.5 - aRand.w * 0.5, 0.0, 1.0));
-    p = mix(p, dust, d);
-
-    vec3 w = (modelMatrix * vec4(p, 1.0)).xyz;
-
-    // mouse: points are pushed away from the cursor ray
-    vec3 ap = w - uRayO;
-    vec3 cl = uRayO + uRayD * dot(ap, uRayD);
-    vec3 diff = w - cl;
+    vec3 ap = wp - uRayO;
+    vec3 diff = wp - (uRayO + uRayD * dot(ap, uRayD));
     float dist = length(diff);
-    float f = smoothstep(0.62, 0.0, dist) * uMouse;
-    vec3 dir = diff / max(dist, 0.0001);
-    w += dir * f * (0.34 + aRand.z * 0.3) + uRayD * f * 0.28;
-    w += (aRand.xyz - 0.5) * f * 0.18;
+    float f = smoothstep(2.2, 0.0, dist) * uMouse;
+    wp += diff / max(dist, 0.0001) * f * 0.9;
 
-    // click ripple
-    vec3 pa = w - uPulseO;
-    float pd = length(pa - uPulseD * dot(pa, uPulseD));
-    float ring = smoothstep(0.25, 0.0, abs(pd - (1.0 - uPulse) * 2.4)) * uPulse;
-    w += normalize(pa - uPulseD * dot(pa, uPulseD) + 0.0001) * ring * 0.35;
-
-    vec4 mv = viewMatrix * vec4(w, 1.0);
+    vec4 mv = viewMatrix * vec4(wp, 1.0);
     gl_Position = projectionMatrix * mv;
-    gl_PointSize = uSize * uPR * (0.78 + aRand.z * 0.45) / -mv.z * (1.0 + f * 0.9 + ring * 1.2);
-
-    // shading: lavender lit from upper-front, lime bleed toward the shoulders
-    vec3 n = normalize((modelMatrix * vec4(aNormal, 0.0)).xyz);
-    float diffuse = max(dot(n, normalize(vec3(-0.45, 0.55, 0.75))), 0.0);
-    float rim = pow(1.0 - max(dot(n, normalize(uRayO - w)), 0.0), 2.5);
-    vec3 lav = vec3(0.79, 0.72, 1.0);
-    vec3 lime = vec3(0.89, 0.94, 0.24);
-    vec3 base = mix(lav, lime, smoothstep(-0.7, -1.9, position.y) * (1.0 - d));
-    vec3 dustCol = mix(vec3(0.55, 0.5, 0.85), vec3(0.95, 0.95, 1.0), aRand.x);
-    vColor = mix(base * (0.34 + 1.1 * diffuse * diffuse + rim * 0.5) * (1.0 - aAO * 0.85), dustCol, d * 0.85);
-    vColor += f * vec3(0.5, 0.45, 0.2);
-    float twinkle = 0.65 + 0.35 * sin(uTime * 2.0 + aRand.w * 60.0);
-    vAlpha = mix(0.95, 0.35 + 0.5 * twinkle * aRand.x, d);
+    float d = length(mv.xyz);
+    gl_PointSize = uSize * uPR * (0.7 + aRand.w * 0.7) * (1.0 + w * 0.8 + f * 0.6) / d;
+    vW = w + f * 0.6;
+    vAlpha = (0.5 + 0.5 * w) * clamp(1.5 - d / 40.0, 0.12, 1.0);
   }
 `;
 const FRAG = /* glsl */ `
-  varying vec3 vColor;
+  varying float vW;
   varying float vAlpha;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     if (d > 0.5) discard;
-    gl_FragColor = vec4(vColor, vAlpha * smoothstep(0.5, 0.18, d));
+    vec3 base = vec3(0.60, 0.65, 0.72);
+    vec3 acc = vec3(1.0, 0.42, 0.21);
+    gl_FragColor = vec4(mix(base, acc, clamp(vW, 0.0, 1.0)), vAlpha * smoothstep(0.5, 0.15, d));
   }
 `;
+const EDGE_VERT = /* glsl */ `
+  uniform float uTime, uPull, uIntro;
+  uniform vec3 uW, uC0, uC1, uC2;
+  attribute float aCl;
+  varying float vA;
+  float wOf(float c) { return c < 0.5 ? uW.x : (c < 1.5 ? uW.y : uW.z); }
+  vec3 cOf(float c) { return c < 0.5 ? uC0 : (c < 1.5 ? uC1 : uC2); }
+  void main() {
+    float w = wOf(aCl);
+    vec3 cc = cOf(aCl);
+    vec3 p = mix(position, cc + (position - cc) * 0.6, w * uPull);
+    p = mix(p * 2.2, p, uIntro);
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
+    vA = w * w * 0.5 * clamp(1.5 - length(mv.xyz) / 40.0, 0.1, 1.0) * uIntro;
+  }
+`;
+const EDGE_FRAG = /* glsl */ `
+  varying float vA;
+  void main() { gl_FragColor = vec4(1.0, 0.42, 0.21, vA); }
+`;
+
+function randn() { return (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.2; }
 
 export default function Scene() {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (reduced) { document.documentElement.classList.add("no-webgl"); return; }
     const canvas = ref.current!;
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: "high-performance" });
-    } catch {
-      document.documentElement.classList.add("no-webgl");
-      return;
-    }
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
+    } catch { document.documentElement.classList.add("no-webgl"); return; }
 
-    // Budget: tuned for integrated GPUs, scaled up on strong desktops, adaptive at runtime.
     const mobile = window.innerWidth < 768 || coarse;
     const cores = navigator.hardwareConcurrency || 4;
-    const COUNT = mobile ? 28000 : cores <= 4 ? 40000 : 56000;
-    let dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 1.5);
+    const N = mobile ? 4500 : cores <= 4 ? 7000 : 10000;
+    let dpr = Math.min(window.devicePixelRatio || 1, 1.75);
     renderer.setPixelRatio(dpr);
-
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 60);
-    const { pos, nor, rnd, ao } = buildHeadCloud(COUNT);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 120);
+
+    // --- the embedding cloud: three clusters plus scattered noise
+    const pos = new Float32Array(N * 3), cl = new Float32Array(N), rnd = new Float32Array(N * 4);
+    const members: number[][] = [[], [], []];
+    for (let i = 0; i < N; i++) {
+      const r = Math.random();
+      let c = -1;
+      if (r < 0.62) c = Math.floor(((r / 0.62) * 3) % 3);
+      if (c >= 0) {
+        const C = CENTERS[c];
+        pos.set([C.x + randn() * 2.3, C.y + randn() * 1.9, C.z + randn() * 2.3], i * 3);
+        members[c].push(i);
+      } else {
+        pos.set([(Math.random() - 0.5) * 34, (Math.random() - 0.5) * 18, 16 - Math.random() * 58], i * 3);
+      }
+      cl[i] = c; rnd.set([Math.random(), Math.random(), Math.random(), Math.random()], i * 4);
+    }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute("aNormal", new THREE.BufferAttribute(nor, 3));
+    geo.setAttribute("aCl", new THREE.BufferAttribute(cl, 1));
     geo.setAttribute("aRand", new THREE.BufferAttribute(rnd, 4));
-    geo.setAttribute("aAO", new THREE.BufferAttribute(ao, 1));
-    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 20); // dust cloud extends past the head
 
-    const uniforms = {
-      uTime: { value: 0 }, uDisperse: { value: 1 }, uSize: { value: 22 }, uPR: { value: dpr },
-      uMouse: { value: 0 }, uPulse: { value: 0 },
+    const U = {
+      uTime: { value: 0 }, uSize: { value: 52 }, uPR: { value: dpr }, uPull: { value: 1 }, uMouse: { value: 0 }, uIntro: { value: reduced ? 1 : 0 },
+      uW: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+      uC0: { value: CENTERS[0] }, uC1: { value: CENTERS[1] }, uC2: { value: CENTERS[2] },
       uRayO: { value: new THREE.Vector3() }, uRayD: { value: new THREE.Vector3(0, 0, -1) },
-      uPulseO: { value: new THREE.Vector3() }, uPulseD: { value: new THREE.Vector3(0, 0, -1) },
     };
-    const mat = new THREE.ShaderMaterial({
-      vertexShader: VERT, fragmentShader: FRAG, uniforms, transparent: true, depthWrite: false,
-    });
-    const points = new THREE.Points(geo, mat);
-    points.frustumCulled = false;
+    const mat = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms: U, transparent: true, depthWrite: false });
+    const cloud = new THREE.Points(geo, mat);
+    cloud.frustumCulled = false;
+    scene.add(cloud);
 
-    // Solid, slightly smaller "clay" body inside the dots so the hero type doesn't show through the face.
-    const occMat = new THREE.MeshBasicMaterial({ color: 0x0b0914, transparent: true, depthWrite: false, depthTest: false });
-    const headGeo = new THREE.SphereGeometry(1, 48, 32);
-    const hp = headGeo.attributes.position;
-    for (let i = 0; i < hp.count; i++) {
-      const [x, y, z] = headBase(hp.getX(i), hp.getY(i), hp.getZ(i));
-      hp.setXYZ(i, x * 0.93, y * 0.93 + HEAD_Y, z * 0.93);
-    }
-    headGeo.computeVertexNormals();
-    const neckGeo = new THREE.CylinderGeometry(0.235, 0.3, 0.9, 24, 1, true);
-    neckGeo.translate(0, -0.78, 0.04);
-    const shGeo = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, Math.PI * 0.56);
-    shGeo.scale(1.4, 0.65, 0.56); shGeo.translate(0, -1.62, -0.08);
-    const occluder = new THREE.Group();
-    [headGeo, neckGeo, shGeo].forEach((g) => { const m = new THREE.Mesh(g, occMat); m.renderOrder = -1; m.frustumCulled = false; occluder.add(m); });
-    const rig = new THREE.Group();
-    rig.add(occluder, points);
-    scene.add(rig);
+    // --- nearest-neighbour edges inside each cluster
+    const ev: number[] = [], ec: number[] = [];
+    members.forEach((m, c) => {
+      const sub = m.slice(0, mobile ? 40 : 70);
+      sub.forEach((a) => {
+        const d = sub.filter((b) => b !== a).map((b) => {
+          const dx = pos[a * 3] - pos[b * 3], dy = pos[a * 3 + 1] - pos[b * 3 + 1], dz = pos[a * 3 + 2] - pos[b * 3 + 2];
+          return { b, d: dx * dx + dy * dy + dz * dz };
+        }).sort((x, y) => x.d - y.d).slice(0, 3);
+        d.forEach(({ b }) => { ev.push(pos[a * 3], pos[a * 3 + 1], pos[a * 3 + 2], pos[b * 3], pos[b * 3 + 1], pos[b * 3 + 2]); ec.push(c, c); });
+      });
+    });
+    const eg = new THREE.BufferGeometry();
+    eg.setAttribute("position", new THREE.Float32BufferAttribute(ev, 3));
+    eg.setAttribute("aCl", new THREE.Float32BufferAttribute(ec, 1));
+    const em = new THREE.ShaderMaterial({ vertexShader: EDGE_VERT, fragmentShader: EDGE_FRAG, uniforms: U, transparent: true, depthWrite: false });
+    const edges = new THREE.LineSegments(eg, em);
+    edges.frustumCulled = false;
+    scene.add(edges);
+
+    // --- one real 3D node per project, with a ring of retrieved chunks around it
+    const shapes = [new THREE.IcosahedronGeometry(1.35, 0), new THREE.OctahedronGeometry(1.6, 0), new THREE.DodecahedronGeometry(1.35, 0)];
+    const accent = new THREE.Color(1.0, 0.42, 0.21);
+    const nodes = PROJECTS.map((_, i) => {
+      const g = new THREE.Group();
+      g.position.copy(NODES[i]);
+      const lineMat = new THREE.LineBasicMaterial({ color: accent, transparent: true, opacity: 0.2 });
+      const body = new THREE.Mesh(shapes[i % 3], new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.05, depthWrite: false }));
+      const wire = new THREE.LineSegments(new THREE.EdgesGeometry(shapes[i % 3]), lineMat);
+      const orbitPts: number[] = [];
+      for (let k = 0; k < 70; k++) {
+        const a = Math.random() * Math.PI * 2, b = Math.acos(2 * Math.random() - 1), r = 2 + Math.random() * 0.9;
+        orbitPts.push(r * Math.sin(b) * Math.cos(a), r * Math.sin(b) * Math.sin(a) * 0.7, r * Math.cos(b));
+      }
+      const og = new THREE.BufferGeometry(); og.setAttribute("position", new THREE.Float32BufferAttribute(orbitPts, 3));
+      const om = new THREE.PointsMaterial({ color: accent, size: 0.07, transparent: true, opacity: 0.3, depthWrite: false });
+      const orbit = new THREE.Points(og, om);
+      g.add(body, wire, orbit); scene.add(g);
+      return { g, lineMat, om, bodyMat: body.material as THREE.MeshBasicMaterial, orbit, wire };
+    });
+
+    // --- camera path: one keyframe per chapter, projects get one each
+    const n = PROJECTS.length;
+    const kfs: KF[] = [
+      { cam: v(0, 0.8, 14), look: v(0, 0, -8), w: 0.5, off: 0 },
+      { cam: v(0, 0.6, 4), look: v(0, 0, -10), w: 0.7, off: 0 },
+      { cam: v(-1, -1.5, -3), look: v(-1, -3, -14), w: 1, off: 0 },
+      ...NODES.slice(0, n).map((P) => ({ cam: v(P.x, P.y + 0.4, P.z + 10.5), look: v(P.x, P.y, P.z), w: 0.35, off: 1 })),
+      { cam: v(0, 1.5, 18), look: v(0, 0, -12), w: 1, off: 1 },
+    ];
+    const camCurve = new THREE.CatmullRomCurve3(kfs.map((k) => k.cam), false, "catmullrom", 0.4);
+    const lookCurve = new THREE.CatmullRomCurve3(kfs.map((k) => k.look), false, "catmullrom", 0.4);
+    const LAST = kfs.length - 1;
 
     let W = 1, H = 1, aspect = 1;
     const resize = () => {
       W = window.innerWidth; H = window.innerHeight; aspect = W / H;
       renderer.setSize(W, H, false);
-      camera.aspect = aspect; camera.updateProjectionMatrix();
-      uniforms.uSize.value = 22 * (H / 1000);
+      camera.aspect = aspect; camera.fov = aspect < 1 ? 52 : 38; camera.updateProjectionMatrix();
+      U.uSize.value = 52 * (H / 1000);
     };
     resize();
     window.addEventListener("resize", resize);
 
-    // Section centres, measured from the DOM so the scene follows the real layout.
-    let centres: { id: string; y: number }[] = [];
+    // scroll position -> flight parameter s (0..LAST), measured from the DOM
+    let marks: [number, number][] = [];
     const measure = () => {
-      centres = ORDER.map((id) => {
-        const el = document.getElementById(id);
-        if (!el) return null;
-        const r = el.getBoundingClientRect();
-        return { id, y: r.top + window.scrollY + r.height / 2 };
-      }).filter(Boolean) as { id: string; y: number }[];
+      const mid = (id: string) => { const r = document.getElementById(id)!.getBoundingClientRect(); return r.top + scrollY + r.height / 2; };
+      const wk = document.getElementById("work")!.getBoundingClientRect();
+      const wTop = wk.top + scrollY, wEnd = wTop + wk.height - H;
+      marks = [[mid("home"), 0], [mid("about"), 1], [mid("stack"), 2], [wTop, 3], [Math.max(wEnd, wTop + 1), 2 + n], [mid("contact"), LAST]];
     };
-    const ro = new ResizeObserver(measure);
-    ro.observe(document.body);
-    setTimeout(measure, 300);
+    const ro = new ResizeObserver(measure); ro.observe(document.body);
+    setTimeout(measure, 400);
+    const sAt = (y: number) => {
+      if (!marks.length) return 0;
+      if (y <= marks[0][0]) return 0;
+      for (let i = 0; i < marks.length - 1; i++) {
+        const [y0, s0] = marks[i], [y1, s1] = marks[i + 1];
+        if (y <= y1) { const t = (y - y0) / (y1 - y0); return lerp(s0, s1, i === 3 ? t : smooth(t)); }
+      }
+      return LAST;
+    };
 
-    const cur = { cx: 0, cy: 0.05, cz: 5.4, lx: 0, ly: -0.15, lz: 0, d: 1, rot: 0 };
-    const tgt = { ...cur };
-    const mouse = { x: 0, y: 0, tx: 0, ty: 0, active: 0, tActive: 0 };
-    const look = new THREE.Vector3();
-    const tmp = new THREE.Vector3();
-
-    const onMove = (e: PointerEvent) => {
-      mouse.tx = (e.clientX / W) * 2 - 1;
-      mouse.ty = -((e.clientY / H) * 2 - 1);
-      mouse.tActive = e.pointerType === "mouse" ? 1 : 0.85;
-    };
-    const onLeave = () => (mouse.tActive = 0);
-    const onDown = (e: PointerEvent) => {
-      onMove(e);
-      tmp.set(mouse.tx, mouse.ty, 0.5).unproject(camera).sub(camera.position).normalize();
-      uniforms.uPulseO.value.copy(camera.position);
-      uniforms.uPulseD.value.copy(tmp);
-      uniforms.uPulse.value = 1;
-      gsap.to(uniforms.uPulse, { value: 0, duration: 1.4, ease: "power2.out", overwrite: true });
-    };
+    const mouse = { x: 0, y: 0, tx: 0, ty: 0, a: 0, ta: 0 };
+    const onMove = (e: PointerEvent) => { mouse.tx = (e.clientX / W) * 2 - 1; mouse.ty = -((e.clientY / H) * 2 - 1); mouse.ta = e.pointerType === "mouse" ? 1 : 0; };
+    const onLeave = () => (mouse.ta = 0);
     window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerdown", onDown, { passive: true });
     document.addEventListener("pointerleave", onLeave);
 
-    // Intro: dust gathers into the head once the preloader lifts.
-    const intro = { t: reduced ? 1 : 0 };
-    const startIntro = () => gsap.to(intro, { t: 1, duration: 2.6, ease: "power3.inOut" });
+    const intro = { t: 0 };
+    const startIntro = () => gsap.to(intro, { t: 1, duration: 2.2, ease: "power3.out" });
     window.addEventListener("preloader:done", startIntro, { once: true });
 
-    const compute = () => {
-      const y = window.scrollY + H * 0.5;
-      let a = centres[0], b = centres[0], t = 0;
-      if (centres.length) {
-        if (y <= centres[0].y) { a = b = centres[0]; }
-        else if (y >= centres[centres.length - 1].y) { a = b = centres[centres.length - 1]; }
-        else {
-          for (let i = 0; i < centres.length - 1; i++) {
-            if (y >= centres[i].y && y < centres[i + 1].y) {
-              a = centres[i]; b = centres[i + 1];
-              t = smooth((y - a.y) / (b.y - a.y));
-              break;
-            }
-          }
-        }
-      }
-      const A = STAGES[a?.id ?? "home"], B = STAGES[b?.id ?? "home"];
-      const zs = aspect < 1 ? 1 + (1 - aspect) * 1.0 : 1; // pull back on portrait screens
-      const xs = aspect < 1 ? 0.35 : 1; // keep the head nearer centre on phones
-      tgt.cx = lerp(A.cam[0], B.cam[0], t) * xs; tgt.cy = lerp(A.cam[1], B.cam[1], t); tgt.cz = lerp(A.cam[2], B.cam[2], t) * zs;
-      tgt.lx = lerp(A.look[0], B.look[0], t) * xs; tgt.ly = lerp(A.look[1], B.look[1], t); tgt.lz = lerp(A.look[2], B.look[2], t);
-      tgt.d = lerp(A.disperse, B.disperse, t);
-      tgt.rot = lerp(A.rot, B.rot, t);
-    };
+    let sCur = 0, wCur = 0.5;
+    const camP = new THREE.Vector3(), lookP = new THREE.Vector3(), tmp = new THREE.Vector3();
+    let ema = 1 / 60, slow = 0, frac = 1;
 
-    // Adaptive quality: if frames run long, shed particles and resolution.
-    let ema = 1 / 60, slow = 0, drawFrac = 1;
     const tick = (time: number, dtMs: number) => {
       const dt = Math.min(dtMs / 1000, 0.05);
-      compute();
-      const k = 1 - Math.exp(-dt * (reduced ? 30 : 3.6));
-      for (const key of Object.keys(tgt) as (keyof typeof tgt)[]) cur[key] = lerp(cur[key], tgt[key], k);
-      mouse.x = lerp(mouse.x, mouse.tx, 1 - Math.exp(-dt * 7));
-      mouse.y = lerp(mouse.y, mouse.ty, 1 - Math.exp(-dt * 7));
-      mouse.active = lerp(mouse.active, mouse.tActive, 1 - Math.exp(-dt * 5));
+      const sT = sAt(scrollY + H * 0.5);
+      sCur = lerp(sCur, sT, 1 - Math.exp(-dt * 4.2));
+      const u = clamp01(sCur / LAST);
+      camCurve.getPoint(u, camP); lookCurve.getPoint(u, lookP);
+      // interpolate chapter attributes by keyframe index
+      const i0 = Math.min(LAST - 1, Math.floor(sCur)), f = sCur - i0;
+      const off = lerp(kfs[i0].off, kfs[i0 + 1].off, smooth(f));
+      const wT = lerp(kfs[i0].w, kfs[i0 + 1].w, smooth(f));
+      wCur = lerp(wCur, wT, 1 - Math.exp(-dt * 3));
+      U.uW.value.set(wCur, wCur, wCur);
+      // desktop: project sits right of centre; phones: sits above the text panel
+      if (aspect >= 1) lookP.x -= SHIFT * off; else lookP.y -= 1.9 * off;
+      mouse.x = lerp(mouse.x, mouse.tx, 1 - Math.exp(-dt * 6)); mouse.y = lerp(mouse.y, mouse.ty, 1 - Math.exp(-dt * 6)); mouse.a = lerp(mouse.a, mouse.ta, 1 - Math.exp(-dt * 5));
+      camera.position.set(camP.x + mouse.x * 0.35, camP.y + mouse.y * 0.25, camP.z);
+      camera.lookAt(lookP); camera.updateMatrixWorld();
 
-      camera.position.set(cur.cx, cur.cy, cur.cz);
-      look.set(cur.lx, cur.ly, cur.lz);
-      camera.lookAt(look);
-      camera.updateMatrixWorld();
-
-      rig.rotation.y = cur.rot + mouse.x * 0.28;
-      rig.rotation.x = -mouse.y * 0.12 + 0.02;
-      rig.updateMatrixWorld(true);
-
+      cloud.rotation.y = time * 0.006; cloud.updateMatrixWorld();
+      edges.rotation.y = cloud.rotation.y; edges.updateMatrixWorld();
       tmp.set(mouse.x, mouse.y, 0.5).unproject(camera).sub(camera.position).normalize();
-      uniforms.uRayO.value.copy(camera.position);
-      uniforms.uRayD.value.copy(tmp);
-      uniforms.uMouse.value = mouse.active;
-      const introE = intro.t;
-      uniforms.uDisperse.value = lerp(1, cur.d, introE);
-      occMat.opacity = Math.max(0, 1 - uniforms.uDisperse.value * 2.2) * 0.96;
-      occluder.visible = occMat.opacity > 0.01;
-      uniforms.uTime.value = time;
+      U.uRayO.value.copy(camera.position); U.uRayD.value.copy(tmp);
+      U.uMouse.value = mouse.a; U.uTime.value = time; U.uIntro.value = reduced ? 1 : intro.t;
 
+      nodes.forEach((nd, i) => {
+        const near = clamp01(1 - Math.abs(sCur - (3 + i)) * 0.9);
+        nd.g.rotation.y = time * 0.18 + i; nd.g.rotation.x = time * 0.09;
+        nd.orbit.rotation.y = -time * 0.25;
+        nd.lineMat.opacity = (0.22 + near * 0.78) * intro.t; nd.om.opacity = (0.25 + near * 0.65) * intro.t; nd.bodyMat.opacity = (0.02 + near * 0.12) * intro.t;
+        nd.g.scale.setScalar(0.85 + near * 0.15);
+      });
       renderer.render(scene, camera);
 
       ema = lerp(ema, dt, 0.05);
       if (ema > 0.026) slow++; else slow = Math.max(0, slow - 2);
-      if (slow > 120 && drawFrac > 0.45) {
-        slow = 0; drawFrac -= 0.18;
-        geo.setDrawRange(0, Math.floor(COUNT * drawFrac));
-        if (dpr > 1) { dpr = 1; renderer.setPixelRatio(1); uniforms.uPR.value = 1; resize(); }
+      if (slow > 120 && frac > 0.5) {
+        slow = 0; frac -= 0.2; geo.setDrawRange(0, Math.floor(N * frac));
+        if (dpr > 1) { dpr = 1; renderer.setPixelRatio(1); U.uPR.value = 1; resize(); }
       }
     };
     gsap.ticker.add(tick);
 
     return () => {
       gsap.ticker.remove(tick);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerdown", onDown);
-      document.removeEventListener("pointerleave", onLeave);
-      window.removeEventListener("preloader:done", startIntro);
-      ro.disconnect();
-      geo.dispose(); mat.dispose(); occMat.dispose(); headGeo.dispose(); neckGeo.dispose(); shGeo.dispose(); renderer.dispose();
+      window.removeEventListener("resize", resize); window.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerleave", onLeave); window.removeEventListener("preloader:done", startIntro);
+      ro.disconnect(); geo.dispose(); eg.dispose(); mat.dispose(); em.dispose(); renderer.dispose();
     };
   }, []);
 

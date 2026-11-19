@@ -1,11 +1,10 @@
-import { Link } from "react-router-dom";
+import { go } from "@/lib/transition";
 
 const NotFound = () => (
   <main className="nf">
-    <p className="nf__code">404</p>
-    <p>That page dissolved into particles.</p>
-    <Link className="btn btn--lime" to="/">Back to the portfolio</Link>
+    <p className="mono">retrieve(k=0)</p>
+    <h1 className="display">No match</h1>
+    <a className="link" href="/" onClick={(e) => { e.preventDefault(); go("/"); }}><span>Back to the index</span><i aria-hidden="true">→</i></a>
   </main>
 );
-
 export default NotFound;
