@@ -1,42 +1,26 @@
-import { useEffect, useState } from "react";
-import { scrollToId, ScrollTrigger } from "@/lib/motion";
-import { go } from "@/lib/transition";
+import { useEffect, useRef, useState } from "react";
+import { NAV } from "@/lib/data";
+import { scrollToId } from "@/lib/motion";
 
-const QUERIES: Record<string, string> = {
-  home: 'query: "software developer"',
-  about: "retrieve(k=3): web, ai, backend",
-  stack: "context: tools and languages",
-  work: "rank: projects",
-  contact: "answer: say hello",
-};
-
-export function Nav({ home = true }: { home?: boolean }) {
+export default function Nav({ always }: { always: boolean }) {
+  const [open, setOpen] = useState(false);
+  const btn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { setOpen(false); btn.current?.focus(); } };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  const go = (id: string) => (e: React.MouseEvent) => { e.preventDefault(); setOpen(false); scrollToId(id); };
   return (
-    <header className="nav">
-      <a className="nav__name" href="/" onClick={(e) => { e.preventDefault(); home ? scrollToId("home") : go("/"); }}>Joel Onyedika</a>
-      <nav aria-label="Main" className="nav__links mono">
-        {home ? (
-          <>
-            <a href="#about" onClick={(e) => { e.preventDefault(); scrollToId("about"); }}>About</a>
-            <a href="#work" onClick={(e) => { e.preventDefault(); scrollToId("work"); }}>Work</a>
-            <a href="#contact" onClick={(e) => { e.preventDefault(); scrollToId("contact"); }}>Contact</a>
-          </>
-        ) : (
-          <a href="/" onClick={(e) => { e.preventDefault(); go("/"); }}>All work</a>
-        )}
+    <header className={`nav ${always ? "nav--always" : ""} ${open ? "is-open" : ""}`}>
+      <a className="nav__mark" href="#top" onClick={(e) => { e.preventDefault(); setOpen(false); window.scrollTo({ top: 0 }); }} aria-label="Joel Onyedika, back to top">J·O</a>
+      <button ref={btn} className="nav__toggle" aria-expanded={open} aria-controls="nav-links" onClick={() => setOpen((o) => !o)}>
+        <span className="sr-only">{open ? "Close menu" : "Open menu"}</span><i /><i />
+      </button>
+      <nav id="nav-links" className="nav__links" aria-label="Primary">
+        {NAV.map((n) => <a key={n.id} href={`#${n.id}`} onClick={go(n.id)}>{n.label}</a>)}
       </nav>
     </header>
   );
-}
-
-/** Bottom-left line that narrates the "query" for the chapter you're in. */
-export function Hud() {
-  const [id, setId] = useState("home");
-  useEffect(() => {
-    const sts = Object.keys(QUERIES).map((k) => ScrollTrigger.create({
-      trigger: `#${k}`, start: "top 55%", end: "bottom 55%", onToggle: (s) => s.isActive && setId(k),
-    }));
-    return () => sts.forEach((s) => s.kill());
-  }, []);
-  return <p className={`hud mono ${id === "contact" ? "is-hidden" : ""}`} aria-hidden="true"><span key={id}>{"> "}{QUERIES[id]}</span></p>;
 }

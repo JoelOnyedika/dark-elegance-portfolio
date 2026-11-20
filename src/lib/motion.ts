@@ -3,18 +3,22 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 
 gsap.registerPlugin(ScrollTrigger);
+export { gsap, ScrollTrigger };
 
-const mq = (q: string) => typeof window !== "undefined" && window.matchMedia(q).matches;
-export const reduced = mq("(prefers-reduced-motion: reduce)");
-export const coarse = mq("(pointer: coarse)");
+export const reducedQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+export const smooth: { lenis: Lenis | null } = { lenis: null };
 
-export const motion: { lenis: Lenis | null } = { lenis: null };
+export const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+export const smoothstep = (a: number, b: number, v: number) => {
+  const t = clamp((v - a) / (b - a));
+  return t * t * (3 - 2 * t);
+};
 
-/** Lenis smooth scroll wired into GSAP's ticker so ScrollTrigger and the 3D scene stay in lockstep. */
+/** Lenis smooth scrolling wired into the GSAP ticker. Returns a cleanup function. */
 export function startSmoothScroll() {
-  if (reduced) return () => {};
-  const lenis = new Lenis({ lerp: 0.085, wheelMultiplier: 0.9 });
-  motion.lenis = lenis;
+  const lenis = new Lenis({ lerp: 0.12, wheelMultiplier: 1 });
+  smooth.lenis = lenis;
   lenis.on("scroll", ScrollTrigger.update);
   const tick = (t: number) => lenis.raf(t * 1000);
   gsap.ticker.add(tick);
@@ -22,18 +26,17 @@ export function startSmoothScroll() {
   return () => {
     gsap.ticker.remove(tick);
     lenis.destroy();
-    motion.lenis = null;
+    smooth.lenis = null;
   };
 }
 
 export function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (motion.lenis) {
-    motion.lenis.scrollTo(el, { duration: 1.8, easing: (t: number) => 1 - Math.pow(1 - t, 4) });
-  } else {
-    el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
-  }
+  const y = el.getBoundingClientRect().top + window.scrollY;
+  if (smooth.lenis) smooth.lenis.scrollTo(y, { duration: 1.4 });
+  else window.scrollTo({ top: y, behavior: reducedQuery.matches ? "auto" : "smooth" });
+  history.replaceState(null, "", `#${id}`);
+  el.setAttribute("tabindex", "-1");
+  el.focus({ preventScroll: true });
 }
-
-export { gsap, ScrollTrigger };

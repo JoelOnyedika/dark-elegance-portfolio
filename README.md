@@ -1,25 +1,23 @@
 # Joel Onyedika — Portfolio
 
-3D scroll portfolio built as an embedding space. React + Vite + TypeScript, Three.js (custom shaders), GSAP ScrollTrigger and Lenis. See DESIGN.md for the concept.
+A cinematic, scroll-driven portfolio. React + Vite + TypeScript, GSAP ScrollTrigger, Lenis, and a small WebGL layer.
 
-## Run locally
+## How it works
+- **Opening** (`src/components/Opening.tsx`): the 238 supplied frames (`public/frames/f001.jpg … f238.jpg`) are preloaded with real progress, then scrubbed to scroll position on a canvas inside a sticky (pinned) section. The hero type is real HTML. The last ~28% of the scroll zooms into the laptop screen.
+- **Environment** (`src/components/Env.tsx`): the final frame, painted with the exact placement the opening ends on, sits behind the whole site, so the hand-off is pixel-identical. A light WebGL shader adds twinkling stars and drifting mist.
+- **Frame maths** (`src/lib/frames.ts`): landscape uses cover; portrait keeps the laptop in view, then eases into cover.
+- **Reduced motion / no JS**: no sequence; a static hero over the final frame, everything visible. `<noscript>` content is in `index.html`.
+
+## Edit your content
+Everything is in `src/lib/data.ts`: projects, skills, links, testimonials.
+- **Screenshots:** put an image in `public/projects/` and set `screenshot: "/projects/collecto.jpg"` on the project.
+- **LinkedIn:** set `LINKEDIN` (currently a marked placeholder).
+- **Testimonials:** currently marked placeholders.
+
+## Run
 ```bash
 npm install
 npm run dev      # http://localhost:8080
-npm run build    # production build in dist/
+npm run build
 ```
-
-## Deploy to Vercel
-1. Push this folder to a GitHub repo (or run `npx vercel` from this folder).
-2. Import it in Vercel. Framework preset: **Vite** (auto-detected). Build: `npm run build`, output: `dist`.
-3. Add the environment variable `VITE_WEB3FORMS_API_KEY` (your Web3Forms key) so the contact form works.
-   `vercel.json` already rewrites all routes to `index.html`.
-
-## Where things live
-- `src/lib/data.ts`: projects, stack, email and links.
-- `src/components/Scene.tsx`: the 3D scene and camera path.
-- `src/components/sections/*`: one file per section. `src/pages/Case.tsx`: project case pages.
-- `src/index.css`: all styling and tokens (`:root`).
-
-## Performance
-Point count adapts to the device (4.5k phone, 7k/10k desktop) and drops automatically if frames run long. `prefers-reduced-motion` disables smooth scroll and WebGL.
+Deploys to Vercel as-is (`vercel.json` adds immutable caching for frames and assets).

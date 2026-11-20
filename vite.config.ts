@@ -2,16 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
-export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 8080,
-  },
+export default defineConfig({
+  server: { host: "::", port: 8080 },
   plugins: [react()],
-  build: { chunkSizeWarningLimit: 700, rollupOptions: { output: { manualChunks: { three: ["three"], gsap: ["gsap", "lenis"] } } } },
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-}));
+  build: { rollupOptions: { output: { manualChunks: { gsap: ["gsap", "lenis"] } } } },
+  resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+});
