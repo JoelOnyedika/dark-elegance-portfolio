@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/manrope";
-import "@fontsource-variable/bricolage-grotesque/wdth.css";
+import "@fontsource-variable/unbounded";
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 import App from "./App";

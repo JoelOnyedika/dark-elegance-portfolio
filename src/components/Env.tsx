@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { drawFrame, placement, store } from "@/lib/frames";
+import { drawFrame, endBlur, placement, store } from "@/lib/frames";
 import Cosmos from "./Cosmos";
 
 /**
@@ -20,7 +20,14 @@ export default function Env({ reduced, ready }: { reduced: boolean; ready: boole
       if (!img) return;
       const w = cv.clientWidth, h = cv.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
       cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-      drawFrame(ctx, img, cv.width, cv.height, placement(w, h, 1), dpr);
+      // the soft finish is baked in once here, so nothing has to be blurred while scrolling
+      const tmp = document.createElement("canvas");
+      tmp.width = cv.width; tmp.height = cv.height;
+      drawFrame(tmp.getContext("2d")!, img, cv.width, cv.height, placement(w, h, 1), dpr);
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      try { ctx.filter = `blur(${(endBlur(w, h) * dpr).toFixed(2)}px)`; } catch { /* unsupported: stays sharp */ }
+      ctx.drawImage(tmp, 0, 0);
+      ctx.filter = "none";
       document.documentElement.classList.add("env-ready");
     };
     paint();

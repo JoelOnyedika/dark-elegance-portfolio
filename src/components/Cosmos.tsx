@@ -26,7 +26,7 @@ export default function Cosmos({ reduced }: { reduced: boolean }) {
     let w = 0, h = 0, dpr = 1, raf = 0, vel = 0, last = scrollY, px = 0, py = 0, tx = 0, ty = 0, cx = -1, cy = -1;
     const shoot: { x: number; y: number; vx: number; vy: number; life: number }[] = [];
     const size = () => {
-      dpr = Math.min(devicePixelRatio || 1, small ? 1.5 : 2); w = innerWidth; h = innerHeight;
+      dpr = Math.min(devicePixelRatio || 1, small ? 1 : 1.5); w = innerWidth; h = innerHeight;
       cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
     };
     size();
@@ -49,14 +49,14 @@ export default function Cosmos({ reduced }: { reduced: boolean }) {
         const x = o.x * w + px * -60 * o.z + Math.sin(t * 0.00012 + o.x * 9) * 30;
         const g = ctx.createRadialGradient(x, y, 0, x, y, o.r * Math.max(w, h));
         g.addColorStop(0, `rgba(${o.c},${(o.a + boost * 0.04).toFixed(3)})`); g.addColorStop(1, `rgba(${o.c},0)`);
-        ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+        const rr = o.r * Math.max(w, h); ctx.fillStyle = g; ctx.fillRect(x - rr, y - rr, rr * 2, rr * 2);
       }
 
       // aurora ribbons: flow with time, shear with scroll speed
       const ribbons = small ? 2 : 3;
       for (let k = 0; k < ribbons; k++) {
         const base = h * (0.28 + k * 0.26) - ((sy * (0.08 + k * 0.05)) % (h * 0.9)) + h * 0.2;
-        for (const [lw, al] of [[90, 0.018], [44, 0.025], [16, 0.04], [4, 0.1]] as const) {
+        for (const [lw, al] of [[56, 0.022], [14, 0.045], [3, 0.11]] as const) {
           ctx.beginPath();
           for (let x = -20; x <= w + 20; x += 24) {
             const y = base + Math.sin(x * 0.004 + t * 0.00022 * (1 + k * 0.4) + k * 2) * (40 + boost * 40) + Math.sin(x * 0.011 - t * 0.0003 + k) * 14 + px * 40;
@@ -124,8 +124,11 @@ export default function Cosmos({ reduced }: { reduced: boolean }) {
       addEventListener("resize", onResize);
       return () => removeEventListener("resize", onResize);
     }
+    let lastT = 0;
     const loop = (t: number) => {
       raf = requestAnimationFrame(loop);
+      if (t - lastT < (small ? 32 : 22)) return; // ~30fps phones, ~45fps desktop: plenty for a soft background
+      lastT = t;
       if (document.hidden || env.gl < 0.002) { last = scrollY; return; } // nothing to show during the opening
       draw(t);
     };

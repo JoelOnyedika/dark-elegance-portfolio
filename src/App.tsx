@@ -4,6 +4,7 @@ import { ScrollTrigger, reducedQuery, startSmoothScroll } from "@/lib/motion";
 import Preloader from "@/components/Preloader";
 import Env from "@/components/Env";
 import Nav from "@/components/Nav";
+import ScrollRail from "@/components/ScrollRail";
 import Opening from "@/components/Opening";
 import StaticHero from "@/components/StaticHero";
 import About from "@/components/About";
@@ -53,6 +54,7 @@ export default function App() {
       <a className="skip" href="#about">Skip to content</a>
       <Env reduced={reduced} ready={ready} />
       <Nav always={reduced} />
+      <ScrollRail />
       <main>
         {reduced ? <StaticHero /> : <Opening ready={ready} entered={entered} />}
         <About />

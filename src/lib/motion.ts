@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { nav } from "./state";
 
 gsap.registerPlugin(ScrollTrigger);
 export { gsap, ScrollTrigger };
@@ -34,6 +35,7 @@ export function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   const y = el.getBoundingClientRect().top + window.scrollY;
+  nav.freeUntil = performance.now() + 2200;
   if (smooth.lenis) smooth.lenis.scrollTo(y, { duration: 1.4 });
   else window.scrollTo({ top: y, behavior: reducedQuery.matches ? "auto" : "smooth" });
   history.replaceState(null, "", `#${id}`);
