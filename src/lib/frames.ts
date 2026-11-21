@@ -1,7 +1,6 @@
 import { clamp, lerp, smoothstep } from "./motion";
 
 export const FRAME_COUNT = 238;
-export const TOTAL_ASSETS = FRAME_COUNT + 1;
 export const FRAME_W = 1920;
 export const FRAME_H = 1080;
 /** Share of the opening's scroll used to play frames; the rest is the final zoom into the screen. */
@@ -14,10 +13,28 @@ const FOCUS = { x: 0.5, y: 0.4 };
 /** Blur (px) applied at the end of the zoom, to hide upscaling artefacts; the environment still uses the same value. */
 export const endBlur = (w: number, h: number) => (w / h < 0.9 ? 1.1 : 0.7);
 
-export const frameUrl = (i: number) => `/frames/f${String(i + 1).padStart(3, "0")}.webp`;
+/** Phones and portrait screens get lighter frames (about a quarter of the weight); everything else gets the full set. */
+const lite = () => typeof window !== "undefined" && (innerWidth < 760 || innerWidth / innerHeight < 0.9);
+export const frameUrl = (i: number, small = lite()) => `/frames/${small ? "m/" : ""}f${String(i + 1).padStart(3, "0")}.webp`;
 
 export const ENV_URL = "/frames/env.webp";
-export const store: { frames: (HTMLImageElement | undefined)[]; env?: HTMLImageElement } = { frames: [] };
+export const store: { frames: (HTMLImageElement | undefined)[]; env?: HTMLImageElement; listeners: Set<(i: number) => void> } = { frames: [], env: undefined, listeners: new Set() };
+
+/** Every STRIDE-th frame gates the entrance; the rest stream in behind the scenes while the visitor reads the hero. */
+const STRIDE = 6;
+export const GATE_FRAMES = Array.from({ length: FRAME_COUNT }, (_, i) => i).filter((i) => i % STRIDE === 0 || i === FRAME_COUNT - 1);
+export const GATE_TOTAL = GATE_FRAMES.length + 1; // + the cloud still
+
+/** Nearest loaded frame to idx (exact one if it has arrived). */
+export function frameAt(idx: number) {
+  const f = store.frames;
+  if (f[idx]) return f[idx];
+  for (let d = 1; d < FRAME_COUNT; d++) {
+    const a = f[idx - d] ?? f[idx + d];
+    if (a) return a;
+  }
+  return undefined;
+}
 
 export function loadImage(src: string, retries = 2): Promise<HTMLImageElement | undefined> {
   return new Promise((resolve) => {
@@ -29,36 +46,35 @@ export function loadImage(src: string, retries = 2): Promise<HTMLImageElement | 
   });
 }
 
-/** Loads every frame exactly once with a bounded pool, reporting genuine progress. */
-export async function preloadFrames(onProgress: (loaded: number) => void, concurrency = 12, onEnv?: (img: HTMLImageElement) => void) {
-  // the cloud still goes first: it dresses the loading screen and is needed for the hand-off
+async function pool(list: number[], concurrency: number, each: (i: number) => Promise<void>) {
+  let next = 0;
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    while (next < list.length) await each(list[next++]);
+  }));
+}
+
+/**
+ * Loads the cloud still, then a coarse pass of frames (every 6th). Resolves as soon as that pass is in, so the
+ * site opens after a fraction of the weight. The remaining frames keep loading in the background and the
+ * opening upgrades to them as they arrive. Progress counts only what the entrance actually waits for.
+ */
+export async function preloadFrames(onProgress: (loaded: number) => void, concurrency = 10, onEnv?: (img: HTMLImageElement) => void) {
   const env = await loadImage(ENV_URL);
   if (env) { await env.decode?.().catch(() => undefined); store.env = env; onEnv?.(env); }
   onProgress(1);
-  const frames: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
-  let next = 0;
+  store.frames = new Array(FRAME_COUNT);
   let done = 1;
-  async function worker() {
-    while (next < FRAME_COUNT) {
-      const i = next++;
-      const img = await loadImage(frameUrl(i));
-      if (img && img.decode) await img.decode().catch(() => undefined);
-      frames[i] = img;
-      onProgress(++done);
-    }
-  }
-  await Promise.all(Array.from({ length: concurrency }, worker));
-  // Never show a hole: borrow the nearest earlier (or later) loaded frame for any frame that failed.
-  for (let i = 0; i < FRAME_COUNT; i++) {
-    if (!frames[i]) {
-      let j = i;
-      while (j >= 0 && !frames[j]) j--;
-      if (j < 0) { j = i; while (j < FRAME_COUNT && !frames[j]) j++; }
-      frames[i] = frames[j];
-    }
-  }
-  store.frames = frames;
-  return frames;
+  const fetchOne = async (i: number) => {
+    const img = await loadImage(frameUrl(i));
+    if (img) { await img.decode?.().catch(() => undefined); store.frames[i] = img; store.listeners.forEach((fn) => fn(i)); }
+  };
+  await pool(GATE_FRAMES, concurrency, async (i) => { await fetchOne(i); onProgress(++done); });
+  // the rest, middle first then everything else, without blocking the entrance
+  const gate = new Set(GATE_FRAMES);
+  const rest = Array.from({ length: FRAME_COUNT }, (_, i) => i).filter((i) => !gate.has(i));
+  const pass2 = rest.filter((i) => i % 3 === 0), pass3 = rest.filter((i) => i % 3 !== 0);
+  void pool(pass2, 6, fetchOne).then(() => pool(pass3, 6, fetchOne));
+  return store.frames;
 }
 
 export function frameIndexFor(p: number) {

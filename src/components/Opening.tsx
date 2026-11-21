@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { ScrollTrigger, smoothstep, scrollToId } from "@/lib/motion";
-import { drawFrame, endBlur, frameIndexFor, placement, store, zoomPhase } from "@/lib/frames";
+import { drawFrame, endBlur, frameAt, frameIndexFor, placement, store, zoomPhase } from "@/lib/frames";
 import { env } from "@/lib/state";
 import { TITLE } from "@/lib/data";
 
@@ -32,10 +32,10 @@ export default function Opening({ ready, entered }: { ready: boolean; entered: b
       if (!w) return;
       const idx = frameIndexFor(p);
       const pl = placement(w, h, p);
-      const key = `${idx}|${pl.x.toFixed(1)}|${pl.y.toFixed(1)}|${pl.w.toFixed(1)}|${pl.feather.toFixed(0)}`;
+      const key = `${store.frames[idx] ? 1 : 0}|${idx}|${pl.x.toFixed(1)}|${pl.y.toFixed(1)}|${pl.w.toFixed(1)}|${pl.feather.toFixed(0)}`;
       if (key === lastKey) return;
       lastKey = key;
-      const img = store.frames[idx];
+      const img = frameAt(idx);
       if (img) drawFrame(ctx, img, cv.width, cv.height, pl, dpr);
     };
 
@@ -85,10 +85,12 @@ export default function Opening({ ready, entered }: { ready: boolean; entered: b
       stage.current!.style.setProperty("--my", (e.clientY / innerHeight - 0.5).toFixed(3));
     };
     addEventListener("pointermove", onMove);
+    const onFrame = (i: number) => { if (i === frameIndexFor(p)) render(); };
+    store.listeners.add(onFrame);
     size();
     apply();
     return () => {
-      st.kill(); veil.kill(); ro.disconnect(); removeEventListener("pointermove", onMove);
+      st.kill(); veil.kill(); ro.disconnect(); store.listeners.delete(onFrame); removeEventListener("pointermove", onMove);
       root.style.setProperty("--gl", "0"); root.style.setProperty("--veil", "0"); root.classList.remove("nav-on"); env.gl = 0;
     };
   }, [ready]);

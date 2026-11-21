@@ -72,6 +72,12 @@ export const PROJECTS: Project[] = [
 
 export const SERVICES = [
   {
+    tag: "Front-end",
+    title: "Websites & 3D experiences",
+    text: "Full-blown, beautiful websites and web apps: cinematic scroll stories, interactive 3D scenes and motion-rich interfaces that make people stop and look.",
+    chips: ["React", "Three.js", "GSAP"],
+  },
+  {
     tag: "Full-stack",
     title: "Web apps & SaaS",
     text: "Complete products from first screen to database: dashboards, platforms, marketplaces and real-time tools people actually enjoy using.",
@@ -104,7 +110,7 @@ export const STEPS = [
 ];
 
 export const STACK = [
-  "Python", "FastAPI", "React", "TypeScript", "Next.js", "Node.js", "PostgreSQL", "Supabase", "Stripe",
+  "React", "TypeScript", "Next.js", "Three.js", "GSAP", "Python", "FastAPI", "Node.js", "PostgreSQL", "Supabase", "Stripe",
   "LangChain", "OpenAI", "RAG pipelines", "LLM agents", "PyTorch", "Docker", "AWS",
 ];
 
@@ -119,6 +125,8 @@ export const TESTIMONIALS = Array.from({ length: 6 }, (_, i) => ({
   quote: "Placeholder testimonial. Replace this with a real quote from a client or collaborator.",
   name: "Name Surname",
   role: "Role, Company",
+  /** PLACEHOLDER portrait: drop a real photo into /public/avatars and point to it here. */
+  avatar: `/avatars/p${i + 1}.webp`,
 }));
 
 export const NAV = [

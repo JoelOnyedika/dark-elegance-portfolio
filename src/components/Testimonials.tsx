@@ -82,7 +82,7 @@ export default function Testimonials() {
               style={{ transform: `rotateY(${i * step}deg) translateZ(var(--R))` }} aria-label={`Testimonial ${i + 1} of ${n}`}>
               <span className="tcard__ph">Placeholder</span>
               <blockquote>“{t.quote}”</blockquote>
-              <figcaption><strong>{t.name}</strong><span>{t.role}</span></figcaption>
+              <figcaption><img src={t.avatar} alt="" width={48} height={48} loading="lazy" draggable={false} /><span className="tcard__who"><strong>{t.name}</strong><span>{t.role}</span></span></figcaption>
             </figure>
           ))}
         </div>

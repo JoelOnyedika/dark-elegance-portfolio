@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { TOTAL_ASSETS, ENV_URL } from "@/lib/frames";
+import { GATE_TOTAL, ENV_URL } from "@/lib/frames";
 
 const STAGES: [number, string][] = [
-  [0.0, "Setting up the workstation"],
-  [0.28, "Opening the laptop"],
-  [0.55, "Rendering the clouds"],
-  [0.85, "Entering the world"],
-  [0.985, "Ready"],
+  [0.0, "Powering up the workstation"],
+  [0.25, "Opening the laptop"],
+  [0.5, "Gathering the clouds"],
+  [0.8, "Aligning the stars"],
+  [0.985, "Welcome in"],
 ];
 
-/** Loading screen: the same star field and clouds as the site, rising as real assets arrive. */
+/** Loading screen: the same star field and clouds as the site, rising as the experience loads. */
 export default function Preloader({ loaded, ready, envReady, onExited }: { loaded: number; ready: boolean; envReady: boolean; onExited: () => void }) {
   const root = useRef<HTMLDivElement>(null);
   const cv = useRef<HTMLCanvasElement>(null);
@@ -19,7 +19,7 @@ export default function Preloader({ loaded, ready, envReady, onExited }: { loade
   const target = useRef(0);
   const shown = useRef(0);
   const readyRef = useRef(ready);
-  target.current = ready ? 1 : Math.min(loaded / TOTAL_ASSETS, 0.995);
+  target.current = ready ? 1 : Math.min(loaded / GATE_TOTAL, 0.995);
   readyRef.current = ready;
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export default function Preloader({ loaded, ready, envReady, onExited }: { loade
       <div className="preloader__bottom">
         <p className="preloader__name">Joel Onyedika</p>
         <div className="preloader__bar"><i /></div>
-        <p className="preloader__meta"><span>{stage}</span><span>{Math.min(loaded, TOTAL_ASSETS)} / {TOTAL_ASSETS} assets</span></p>
+        <p className="preloader__meta"><span>{stage}</span><span>Loading experience</span></p>
       </div>
     </div>
   );
