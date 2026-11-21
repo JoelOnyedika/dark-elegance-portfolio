@@ -1,8 +1,9 @@
 import { clamp, lerp, smoothstep } from "./motion";
 
 export const FRAME_COUNT = 238;
-export const FRAME_W = 1280;
-export const FRAME_H = 720;
+export const TOTAL_ASSETS = FRAME_COUNT + 1;
+export const FRAME_W = 1920;
+export const FRAME_H = 1080;
 /** Share of the opening's scroll used to play frames; the rest is the final zoom into the screen. */
 export const P_FRAMES = 0.72;
 const ZOOM_MAX = 2.15;
@@ -11,13 +12,14 @@ const ZOOM_MAX_PORTRAIT = 1.6; // portrait is already cropped in; less upscaling
 const FOCUS = { x: 0.5, y: 0.4 };
 
 /** Blur (px) applied at the end of the zoom, to hide upscaling artefacts; the environment still uses the same value. */
-export const endBlur = (w: number, h: number) => (w / h < 0.9 ? 1.6 : 1);
+export const endBlur = (w: number, h: number) => (w / h < 0.9 ? 1.1 : 0.7);
 
-export const frameUrl = (i: number) => `/frames/f${String(i + 1).padStart(3, "0")}.jpg`;
+export const frameUrl = (i: number) => `/frames/f${String(i + 1).padStart(3, "0")}.webp`;
 
-export const store: { frames: (HTMLImageElement | undefined)[] } = { frames: [] };
+export const ENV_URL = "/frames/env.webp";
+export const store: { frames: (HTMLImageElement | undefined)[]; env?: HTMLImageElement } = { frames: [] };
 
-function loadImage(src: string, retries = 2): Promise<HTMLImageElement | undefined> {
+export function loadImage(src: string, retries = 2): Promise<HTMLImageElement | undefined> {
   return new Promise((resolve) => {
     const img = new Image();
     img.decoding = "async";
@@ -28,10 +30,14 @@ function loadImage(src: string, retries = 2): Promise<HTMLImageElement | undefin
 }
 
 /** Loads every frame exactly once with a bounded pool, reporting genuine progress. */
-export async function preloadFrames(onProgress: (loaded: number) => void, concurrency = 14) {
+export async function preloadFrames(onProgress: (loaded: number) => void, concurrency = 12, onEnv?: (img: HTMLImageElement) => void) {
+  // the cloud still goes first: it dresses the loading screen and is needed for the hand-off
+  const env = await loadImage(ENV_URL);
+  if (env) { await env.decode?.().catch(() => undefined); store.env = env; onEnv?.(env); }
+  onProgress(1);
   const frames: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
   let next = 0;
-  let done = 0;
+  let done = 1;
   async function worker() {
     while (next < FRAME_COUNT) {
       const i = next++;
@@ -79,7 +85,7 @@ export function placement(w: number, h: number, p: number): Placement {
     const fit = w / (FRAME_W * 0.5); // starts with the closed laptop filling most of the width
     const t = smoothstep(0.2, P_FRAMES, p);
     scale = lerp(fit, cover, t);
-    anchorY = h * lerp(0.4, 0.5, smoothstep(0, 0.2, p)); // starts high, leaving room for the type below
+    anchorY = h * lerp(0.47, 0.5, smoothstep(0, 0.2, p)); // starts high, leaving room for the type below
     feather = 56 * (1 - t);
   } else {
     srcX = FRAME_W * FOCUS.x; srcY = FRAME_H * FOCUS.y;
@@ -100,23 +106,50 @@ export function placement(w: number, h: number, p: number): Placement {
   return { x: anchorX - srcX * scale, y: anchorY - srcY * scale, w: FRAME_W * scale, h: FRAME_H * scale, scale, feather };
 }
 
+const mk = (w: number, h: number) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
+let tiny: HTMLCanvasElement | undefined, mid: HTMLCanvasElement | undefined, layer: HTMLCanvasElement | undefined;
+
+/**
+ * Draws a frame. Where it doesn't reach the viewport edges (portrait phones), the gap is filled with
+ * the SAME frame shrunk to a few pixels and stretched, so the extension is always colour-matched.
+ */
 export function drawFrame(ctx: CanvasRenderingContext2D, img: HTMLImageElement, cw: number, ch: number, pl: Placement, dpr: number) {
+  const vw = cw / dpr, vh = ch / dpr;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, cw, ch);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, pl.x, pl.y, pl.w, pl.h);
-  if (pl.feather > 0.5) {
-    // soften the top/bottom edges where a portrait screen shows the frame letterboxed
-    ctx.globalCompositeOperation = "destination-out";
-    const top = ctx.createLinearGradient(0, pl.y, 0, pl.y + pl.feather);
+  const covers = pl.x <= 0.5 && pl.y <= 0.5 && pl.x + pl.w >= vw - 0.5 && pl.y + pl.h >= vh - 0.5;
+  if (!covers) {
+    tiny ||= mk(24, 14); mid ||= mk(96, 54);
+    tiny.getContext("2d")!.drawImage(img, 0, 0, 24, 14);
+    const m = mid.getContext("2d")!; m.imageSmoothingQuality = "high"; m.drawImage(tiny, 0, 0, 96, 54);
+    const sc = Math.max(vw / 96, vh / 54);
+    try { ctx.filter = "blur(10px)"; } catch { /* older Safari: bilinear stretch is soft enough */ }
+    ctx.drawImage(mid, (vw - 96 * sc) / 2 - 12, (vh - 54 * sc) / 2 - 12, 96 * sc + 24, 54 * sc + 24);
+    ctx.filter = "none";
+    ctx.fillStyle = "rgba(4,8,26,0.5)";
+    ctx.fillRect(0, 0, vw, vh);
+  }
+  if (!covers && pl.feather > 0.5) {
+    if (!layer || layer.width !== cw || layer.height !== ch) layer = mk(cw, ch);
+    const l = layer.getContext("2d")!;
+    l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, cw, ch);
+    l.setTransform(dpr, 0, 0, dpr, 0, 0); l.imageSmoothingQuality = "high";
+    l.drawImage(img, pl.x, pl.y, pl.w, pl.h);
+    l.globalCompositeOperation = "destination-out";
+    const top = l.createLinearGradient(0, pl.y, 0, pl.y + pl.feather);
     top.addColorStop(0, "rgba(0,0,0,1)"); top.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = top; ctx.fillRect(0, pl.y, cw / dpr, pl.feather);
+    l.fillStyle = top; l.fillRect(0, pl.y, vw, pl.feather);
     const by = pl.y + pl.h;
-    const bot = ctx.createLinearGradient(0, by - pl.feather, 0, by);
+    const bot = l.createLinearGradient(0, by - pl.feather, 0, by);
     bot.addColorStop(0, "rgba(0,0,0,0)"); bot.addColorStop(1, "rgba(0,0,0,1)");
-    ctx.fillStyle = bot; ctx.fillRect(0, by - pl.feather, cw / dpr, pl.feather);
-    ctx.globalCompositeOperation = "source-over";
+    l.fillStyle = bot; l.fillRect(0, by - pl.feather, vw, pl.feather);
+    l.globalCompositeOperation = "source-over";
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(layer, 0, 0);
+  } else {
+    ctx.drawImage(img, pl.x, pl.y, pl.w, pl.h);
   }
 }

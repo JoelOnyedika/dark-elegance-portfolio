@@ -8,9 +8,10 @@ export default function Contact() {
   return (
     <section id="contact" className="sec contact" ref={ref} aria-labelledby="contact-h">
       <div className="wrap">
-        <p className="kicker" data-reveal><span>05</span> Contact</p>
-        <h2 id="contact-h" className="h2 h2--xl" data-reveal>Let's build <em>something together.</em></h2>
-        <a className="cta" href={`mailto:${EMAIL}`} data-reveal><span>{EMAIL}</span><i aria-hidden="true">→</i></a>
+        <p className="kicker" data-reveal><span>06</span> Contact</p>
+        <h2 id="contact-h" className="h2 h2--xl" data-reveal>Have a project in mind? <em>Let's make it real.</em></h2>
+        <p className="lede" data-reveal>Tell me what you're building, what's blocking you or what role you're hiring for. I read every message and reply personally.</p>
+        <a className="cta" href={`mailto:${EMAIL}?subject=Let's work together`} data-reveal><span>{EMAIL}</span><i aria-hidden="true">→</i></a>
         <ul className="socials" data-reveal>
           <li><a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub<span className="sr-only"> (opens in a new tab)</span></a></li>
           {LINKEDIN

@@ -71,8 +71,8 @@ export default function Testimonials() {
   return (
     <section id="testimonials" className="sec testimonials" ref={sec} aria-labelledby="testi-h">
       <div className="wrap">
-        <p className="kicker" data-reveal><span>04</span> Testimonials</p>
-        <h2 id="testi-h" className="h2" data-reveal>Kind words, <em>coming soon.</em></h2>
+        <p className="kicker" data-reveal><span>05</span> Kind words</p>
+        <h2 id="testi-h" className="h2 h2--big" data-reveal>What people <em>say.</em></h2>
       </div>
       <div className="cyl" data-reveal role="group" aria-roledescription="carousel" aria-label="Testimonials carousel. Use the left and right arrow keys or drag to rotate."
         tabIndex={0} onKeyDown={key} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>

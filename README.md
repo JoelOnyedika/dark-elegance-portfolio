@@ -1,23 +1,23 @@
 # Joel Onyedika — Portfolio
 
-A cinematic, scroll-driven portfolio. React + Vite + TypeScript, GSAP ScrollTrigger, Lenis, and a small WebGL layer.
+A cinematic, scroll-driven portfolio. React + Vite + TypeScript, GSAP ScrollTrigger, Lenis, canvas 2D.
 
 ## How it works
-- **Opening** (`src/components/Opening.tsx`): the 238 supplied frames (`public/frames/f001.jpg … f238.jpg`) are preloaded with real progress, then scrubbed to scroll position on a canvas inside a sticky (pinned) section. The hero type is real HTML. The last ~28% of the scroll zooms into the laptop screen.
-- **Environment** (`src/components/Env.tsx`): the final frame, painted with the exact placement the opening ends on, sits behind the whole site, so the hand-off is pixel-identical. A light WebGL shader adds twinkling stars and drifting mist.
-- **Frame maths** (`src/lib/frames.ts`): landscape uses cover; portrait keeps the laptop in view, then eases into cover.
-- **Reduced motion / no JS**: no sequence; a static hero over the final frame, everything visible. `<noscript>` content is in `index.html`.
+- **Opening** (`src/components/Opening.tsx`): 238 frames (`public/frames/f001.webp … f238.webp`) are preloaded with real progress and scrubbed to scroll on a canvas in a sticky section. Hero type is real HTML (JOEL top-left, ONYEDIKA bottom-right). The last ~28% zooms into the laptop screen.
+- **Frame quality**: the originals (1280×720) had video macroblock banding. They were deblocked, upscaled to 1920×1080 and re-encoded as WebP with baked grain. Portrait screens use a colour-matched blurred fill so there are no mismatched bands.
+- **Environment** (`Env.tsx`, `Cosmos.tsx`): the final frame (`env.webp`) is painted with the exact placement the opening ends on, so the hand-off is seamless. A living canvas (parallax stars, constellations, aurora, shooting stars) reacts to scroll and pointer.
+- **Projects** (`Projects.tsx`): a 3D ribbon that scales to any number of projects (drag / swipe / keys), with a Grid toggle.
+- **Reduced motion / no JS**: static hero over the final frame; `<noscript>` content in `index.html`.
 
 ## Edit your content
-Everything is in `src/lib/data.ts`: projects, skills, links, testimonials.
-- **Screenshots:** put an image in `public/projects/` and set `screenshot: "/projects/collecto.jpg"` on the project.
-- **LinkedIn:** set `LINKEDIN` (currently a marked placeholder).
-- **Testimonials:** currently marked placeholders.
+Everything lives in `src/lib/data.ts`.
+- **Projects:** add an entry to `PROJECTS`. Covers are in `public/projects/` (generated abstract art). Set `screenshot: "/projects/x.webp"` to use a real image.
+- **Placeholders to replace:** `LINKEDIN`, all `TESTIMONIALS`, the life-sim project copy, and project screenshots.
 
 ## Run
 ```bash
 npm install
-npm run dev      # http://localhost:8080
+npm run dev
 npm run build
 ```
 Deploys to Vercel as-is (`vercel.json` adds immutable caching for frames and assets).

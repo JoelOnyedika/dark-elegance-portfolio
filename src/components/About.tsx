@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { ABOUT_DISCIPLINES } from "@/lib/data";
 import { useReveal } from "@/hooks/useReveal";
+import { scrollToId } from "@/lib/motion";
 
 export default function About() {
   const ref = useRef<HTMLElement>(null);
@@ -9,22 +9,22 @@ export default function About() {
     <section id="about" className="sec about" ref={ref} aria-labelledby="about-h">
       <div className="wrap">
         <p className="kicker" data-reveal><span>01</span> About</p>
-        <h2 id="about-h" className="h2" data-reveal>
-          I build complete software products, <em>from the interface to the database.</em>
+        <h2 id="about-h" className="h2 h2--big" data-reveal>
+          I build software people actually want to use: <em>web apps, AI products</em> and everything behind them.
         </h2>
-        <p className="lede" data-reveal>
-          I'm Joel, a full-stack software developer. I work across frontend and backend, and I take an idea from first
-          sketch to a deployed, working application.
-        </p>
-        <ul className="disciplines">
-          {ABOUT_DISCIPLINES.map((d, i) => (
-            <li key={d.name} data-reveal data-delay={i * 0.08}>
-              <h3>{d.name}</h3>
-              <p>{d.text}</p>
-              <ul className="tags" aria-label={`${d.name} technologies`}>{d.tags.map((t) => <li key={t}>{t}</li>)}</ul>
-            </li>
-          ))}
-        </ul>
+        <div className="about__cols">
+          <p className="lede" data-reveal>
+            I'm Joel, a full-stack developer. I work across the whole stack: the interface, the API, the data and the AI
+            that sits on top. If you have an idea or a problem worth solving, I'll help you turn it into something real,
+            shipped and dependable.
+          </p>
+          <ul className="signals" data-reveal data-delay="0.1">
+            <li><span className="live-dot" aria-hidden="true" />Open to new projects and roles</li>
+            <li>From first sketch to deployed product</li>
+            <li>Frontend, backend and AI under one roof</li>
+          </ul>
+        </div>
+        <a className="btn" href="#contact" data-reveal onClick={(e) => { e.preventDefault(); scrollToId("contact"); }}>Let's talk <i aria-hidden="true">→</i></a>
       </div>
     </section>
   );
