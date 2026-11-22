@@ -28,7 +28,7 @@ export default function Opening({ ready, entered }: { ready: boolean; entered: b
     const ctx = cv.getContext("2d")!;
     const root = document.documentElement;
     let w = 0, h = 0, dpr = 1, p = 0, target = 0, lastKey = "";
-    const RATE = 1.5, LEASH = 0.1; // max playback speed (share of the opening per second) and how far scroll may run ahead
+    const RATE = 2.2, LEASH = 0.14; // max playback speed (share of the opening per second) and how far scroll may run ahead
 
     const render = () => {
       if (!w) return;
