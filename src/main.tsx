@@ -1,12 +1,9 @@
 import { createRoot } from "react-dom/client";
-import "@fontsource-variable/manrope";
-import "@fontsource-variable/unbounded";
+import "@fontsource-variable/inter-tight";
 import "@fontsource-variable/jetbrains-mono";
 import "./index.css";
 import App from "./App";
 
-createRoot(document.getElementById("root")!).render(<App />);
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("rm");
 
-if ("serviceWorker" in navigator && import.meta.env.PROD) {
-  addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => undefined));
-}
+createRoot(document.getElementById("root")!).render(<App />);

@@ -5,6 +5,5 @@ import path from "path";
 export default defineConfig({
   server: { host: "::", port: 8080 },
   plugins: [react()],
-  build: { rollupOptions: { output: { manualChunks: { gsap: ["gsap", "lenis"] } } } },
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
 });
