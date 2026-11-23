@@ -30,7 +30,7 @@ function FaceDots({ entered }: { entered: boolean }) {
 
     function run(f: Face) {
       const mobile = innerWidth < 760;
-      const n = mobile ? Math.floor(f.n * 0.55) : f.n; // points are pre-shuffled, so a prefix is an even, sparser face
+      const n = mobile ? Math.floor(f.n * 0.75) : f.n; // points are pre-shuffled, so a prefix is an even, sparser face
       const tx = new Float32Array(n), ty = new Float32Array(n), tz = new Float32Array(n);
       const sx = new Float32Array(n), sy = new Float32Array(n), sz = new Float32Array(n);
       const dl = new Float32Array(n), ox = new Float32Array(n), oy = new Float32Array(n), bright = new Float32Array(n);
@@ -112,7 +112,7 @@ function FaceDots({ entered }: { entered: boolean }) {
             ctx.fillStyle = `rgba(${r},${g},${b},${alphaOf(lvl) * gA})`;
           }
           for (let k = 0; k < list.length; k++) {
-            const i = list[k], sz2 = (1.15 + 1.1 * bright[i]) * ps[i] * (mobile ? 0.9 : 1);
+            const i = list[k], sz2 = (1.35 + 1.2 * bright[i]) * ps[i] * (mobile ? 0.9 : 1);
             ctx.fillRect(px[i] - sz2 / 2, py[i] - sz2 / 2, sz2, sz2);
           }
         }
