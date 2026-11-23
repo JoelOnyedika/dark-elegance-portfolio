@@ -32,6 +32,18 @@ export const PROJECTS: Project[] = [
     live: "https://collecto-one.vercel.app/",
   },
   {
+    slug: "velga",
+    title: "Velga Store",
+    kind: "Concept storefront · Client work",
+    year: "2026",
+    status: "Live",
+    description:
+      "A cinematic concept storefront for a performance-apparel brand: a full-bleed campaign hero, an editorial product rail and an interactive \u201cRunway\u201d outfit builder with a saved styling bag.",
+    tech: ["Concept", "E-commerce UI", "Interactive", "Responsive"],
+    cover: "/projects/velga.webp",
+    live: "https://ilovenike-ofxl.vercel.app/",
+  },
+  {
     slug: "figma-clone",
     title: "Real-time design canvas",
     kind: "Real-time · Collaboration",
